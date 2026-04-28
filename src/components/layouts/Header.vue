@@ -458,7 +458,8 @@ watch(
     background: var(--color-canvas-dark);
     border-left: 0.0625rem solid var(--color-hairline-dark);
     transform: translateX(100%);
-    transition: transform 0.25s ease;
+    visibility: hidden;
+    transition: transform 0.25s ease, visibility 0.25s;
     z-index: 35;
     display: flex;
     flex-direction: column;
@@ -468,6 +469,7 @@ watch(
 
   .header__menu--open {
     transform: translateX(0);
+    visibility: visible;
   }
 
   .header__menu-close {
