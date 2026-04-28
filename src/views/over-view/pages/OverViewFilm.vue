@@ -42,6 +42,7 @@ const { data, isLoading, isError, error } = useFetchOverViewFilm(
 );
 
 const filmList = computed(() => data.value?.items ?? []);
+const hasSingleResult = computed(() => filmList.value.length === 1);
 const totalPages = computed(() => data.value?.pagination.totalPages ?? 1);
 const totalItems = computed(() => data.value?.pagination.totalItems ?? filmList.value.length);
 const hasGenreFilter = computed(() => Boolean(genreSlug.value));
@@ -261,7 +262,7 @@ const clearGenreFilter = () => {
       </div>
 
       <!-- Film Grid -->
-      <div v-else class="product-grid">
+      <div v-else class="product-grid" :class="{ 'product-grid--single': hasSingleResult }">
         <article
           v-for="film in filmList"
           :key="film._id"
@@ -353,6 +354,11 @@ const clearGenreFilter = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+.product-grid--single {
+  grid-template-columns: minmax(14rem, 18rem);
+  justify-content: start;
 }
 
 .film-card:hover {

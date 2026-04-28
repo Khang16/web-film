@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useFetchCountries, useFetchGenres } from "../../views/over-view/services/over-view.query";
-import { overViewApi } from "../../views/over-view/services/over-view.api";
 
 const router = useRouter();
 const route = useRoute();
@@ -110,7 +109,7 @@ const selectCountry = (slug: string, name: string) => {
   });
 };
 
-const submitSearch = async () => {
+const submitSearch = () => {
   const keyword = sanitizeQuery(searchKeyword.value);
   if (!keyword) {
     goAllFilms();
@@ -118,24 +117,6 @@ const submitSearch = async () => {
   }
 
   mobileMenuOpen.value = false;
-
-  try {
-    const result = await overViewApi.getFilmsByKeyword(
-      keyword,
-      1,
-      String(route.query.genre ?? "") || undefined,
-      String(route.query.country ?? "") || undefined,
-      String(route.query.year ?? "") || undefined,
-    );
-
-    const firstMatch = result.items[0];
-    if (firstMatch?.slug) {
-      router.push(`/overview/${firstMatch.slug}`);
-      return;
-    }
-  } catch (error) {
-    // Fall back to list view if search fails.
-  }
 
   router.push({
     path: "/overview",
