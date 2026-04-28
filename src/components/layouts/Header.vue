@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useFetchCountries, useFetchGenres } from "../../views/over-view/services/over-view.query";
+import { overViewApi } from "../../views/over-view/services/over-view.api";
 
 const router = useRouter();
 const route = useRoute();
@@ -109,9 +110,33 @@ const selectCountry = (slug: string, name: string) => {
   });
 };
 
-const submitSearch = () => {
+const submitSearch = async () => {
   const keyword = sanitizeQuery(searchKeyword.value);
+  if (!keyword) {
+    goAllFilms();
+    return;
+  }
+
   mobileMenuOpen.value = false;
+
+  try {
+    const result = await overViewApi.getFilmsByKeyword(
+      keyword,
+      1,
+      String(route.query.genre ?? "") || undefined,
+      String(route.query.country ?? "") || undefined,
+      String(route.query.year ?? "") || undefined,
+    );
+
+    const firstMatch = result.items[0];
+    if (firstMatch?.slug) {
+      router.push(`/overview/${firstMatch.slug}`);
+      return;
+    }
+  } catch (error) {
+    // Fall back to list view if search fails.
+  }
+
   router.push({
     path: "/overview",
     query: buildOverviewQuery({ keyword }),
@@ -180,7 +205,7 @@ watch(
     />
 
     <div class="header__inner">
-      <div class="header__brand" @click="goHome">HIHI</div>
+      <div class="header__brand" @click="goHome">THẬT MÀ</div>
 
       <button type="button" class="header__menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Mở menu">
         <span class="header__menu-line" />
@@ -447,6 +472,7 @@ watch(
   }
 
   .header__menu {
+    display: none;
     position: fixed;
     top: 0;
     right: 0;
@@ -468,6 +494,7 @@ watch(
   }
 
   .header__menu--open {
+    display: flex;
     transform: translateX(0);
     visibility: visible;
   }
