@@ -2,7 +2,17 @@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useGetInforFilm } from "../services/over-view.query";
-import type { Episode } from "../../../common/types/api-response.interface";
+import type { Episode, EpisodeServer } from "../../../common/types/api-response.interface";
+
+const IMAGE_CDN_BASE = "https://phimimg.com/";
+
+const resolveImageUrl = (url?: string | null) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("//")) return `https:${url}`;
+
+  return new URL(url.replace(/^\/+/, ""), IMAGE_CDN_BASE).toString();
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -11,7 +21,7 @@ const slug = computed(() => String(route.params.slug ?? ""));
 const { data, isLoading, isError, error } = useGetInforFilm(slug);
 
 const movie = computed(() => data.value?.movie ?? null);
-const episodes = computed(() => data.value?.episodes ?? []);
+const episodes = computed<EpisodeServer[]>(() => data.value?.episodes ?? []);
 
 const activeServerIndex = ref(0);
 const activeEpisodeIndex = ref(0);
@@ -139,7 +149,7 @@ const goBack = () => {
           <article class="infor-film-card infor-film-card--poster">
             <img
               class="infor-film-card__image"
-              :src="movie.poster_url || movie.thumb_url"
+              :src="resolveImageUrl(movie.poster_url || movie.thumb_url)"
               :alt="movie.name"
             />
             <div class="infor-film-card__meta">

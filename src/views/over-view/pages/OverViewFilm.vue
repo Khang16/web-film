@@ -1,20 +1,142 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useFetchOverViewFilm } from "../services/over-view.query";
 
+const IMAGE_CDN_BASE = "https://phimimg.com/";
+
+const resolveImageUrl = (url?: string | null) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("//")) return `https:${url}`;
+
+  return new URL(url.replace(/^\/+/, ""), IMAGE_CDN_BASE).toString();
+};
+
 const currentPage = ref(1);
-const { data, isLoading, isError, error } = useFetchOverViewFilm(currentPage);
+const route = useRoute();
 const router = useRouter();
+const genreSlug = computed(() => String(route.query.genre ?? ""));
+const genreName = computed(() => String(route.query.genreName ?? ""));
+const yearSlug = computed(() => String(route.query.year ?? ""));
+const yearName = computed(() => String(route.query.yearName ?? ""));
+const countrySlug = computed(() => String(route.query.country ?? ""));
+const countryName = computed(() => String(route.query.countryName ?? ""));
+const keyword = computed(() => String(route.query.keyword ?? ""));
 
-const filmList = computed(() => data.value ?? []);
+watch(
+  () => [genreSlug.value, yearSlug.value, countrySlug.value, keyword.value],
+  () => {
+    currentPage.value = 1;
+  },
+  { immediate: true },
+);
 
+const { data, isLoading, isError, error } = useFetchOverViewFilm(
+  currentPage,
+  genreSlug,
+  yearSlug,
+  countrySlug,
+  keyword,
+);
+
+const filmList = computed(() => data.value?.items ?? []);
+const totalPages = computed(() => data.value?.pagination.totalPages ?? 1);
+const totalItems = computed(() => data.value?.pagination.totalItems ?? filmList.value.length);
+const hasGenreFilter = computed(() => Boolean(genreSlug.value));
+const hasYearFilter = computed(() => Boolean(yearSlug.value));
+const hasCountryFilter = computed(() => Boolean(countrySlug.value));
+const hasKeywordFilter = computed(() => Boolean(keyword.value));
+const titleLabel = computed(() => {
+  if (hasKeywordFilter.value) return `Từ khóa: ${keyword.value}`;
+  if (hasYearFilter.value) return yearName.value || yearSlug.value;
+  if (hasCountryFilter.value) return countryName.value || countrySlug.value;
+  if (hasGenreFilter.value) return genreName.value || genreSlug.value;
+  return "Phim Mới Cập Nhật";
+});
+const leadText = computed(() => {
+  if (hasKeywordFilter.value) {
+    return `Kết quả tìm kiếm cho từ khóa \"${keyword.value}\".`;
+  }
+
+  if (hasYearFilter.value) {
+    return hasGenreFilter.value
+      ? `Danh sách phim năm ${yearName.value}, thể loại ${genreName.value}.`
+      : `Danh sách phim năm ${yearName.value}.`;
+  }
+
+  if (hasCountryFilter.value) {
+    return hasGenreFilter.value
+      ? `Danh sách phim quốc gia ${countryName.value}, thể loại ${genreName.value}.`
+      : `Danh sách phim quốc gia ${countryName.value}.`;
+  }
+
+  if (hasGenreFilter.value) {
+    return `Danh sách phim thể loại ${genreName.value}.`;
+  }
+
+  return "Danh sách phim mới được cập nhật liên tục với các đánh giá từ TMDB, IMDb, và tính năng xem phim trực tuyến.";
+});
+const activeFilterLabel = computed(() => {
+  if (hasKeywordFilter.value) return "Search";
+  if (hasYearFilter.value) return yearName.value || yearSlug.value;
+  if (hasCountryFilter.value) return countryName.value || countrySlug.value;
+  if (hasGenreFilter.value) return genreName.value || genreSlug.value;
+  return "Live";
+});
+const clearYearFilter = () => {
+  router.push({
+    path: "/overview",
+    query: {
+      genre: genreSlug.value,
+      genreName: genreName.value,
+      country: countrySlug.value,
+      countryName: countryName.value,
+    },
+  });
+};
+
+const clearCountryFilter = () => {
+  router.push({
+    path: "/overview",
+    query: {
+      genre: genreSlug.value,
+      genreName: genreName.value,
+      year: yearSlug.value,
+      yearName: yearName.value,
+      keyword: keyword.value,
+    },
+  });
+};
+
+const clearKeywordFilter = () => {
+  router.push({
+    path: "/overview",
+    query: {
+      genre: genreSlug.value,
+      genreName: genreName.value,
+      year: yearSlug.value,
+      yearName: yearName.value,
+      country: countrySlug.value,
+      countryName: countryName.value,
+    },
+  });
+};
+watch(currentPage, () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+});
 const getRatingColor = (rating: number) => {
   if (rating >= 8) return "rgb(14 203 129)"; // green - trading-up
   if (rating >= 7) return "#fcd535"; // yellow - primary
   if (rating >= 6) return "#3b82f6"; // blue - info
   return "#707a8a"; // muted
 };
+
+
 
 const nextPage = () => {
   currentPage.value += 1;
@@ -29,6 +151,19 @@ const prevPage = () => {
 const openFilmInfo = (slug: string) => {
   router.push(`/overview/${slug}`);
 };
+
+const clearGenreFilter = () => {
+  router.push({
+    path: "/overview",
+    query: {
+      year: yearSlug.value,
+      yearName: yearName.value,
+      country: countrySlug.value,
+      countryName: countryName.value,
+      keyword: keyword.value,
+    },
+  });
+};
 </script>
 
 <template>
@@ -39,21 +174,36 @@ const openFilmInfo = (slug: string) => {
         <div class="badge badge--brand">Film Discovery</div>
 
         <h1 class="product-hero__title">
-          Phim Mới Cập Nhật
+          {{ titleLabel }}
         </h1>
 
         <p class="product-hero__lead">
-          Danh sách phim mới được cập nhật liên tục với các đánh giá từ TMDB,
-          IMDb, và tính năng xem phim trực tuyến.
+          {{ leadText }}
         </p>
 
         <div class="product-hero__actions">
+          <button v-if="hasKeywordFilter" @click="clearKeywordFilter" class="btn btn--ghost">
+            Bỏ tìm kiếm
+          </button>
+
+          <button v-if="hasYearFilter" @click="clearYearFilter" class="btn btn--ghost">
+            Bỏ lọc năm
+          </button>
+
+          <button v-if="hasCountryFilter" @click="clearCountryFilter" class="btn btn--ghost">
+            Bỏ lọc quốc gia
+          </button>
+
+          <button v-if="hasGenreFilter" @click="clearGenreFilter" class="btn btn--ghost">
+            Tất cả phim
+          </button>
+
           <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">
             ← Trang trước
           </button>
 
           <span style="color: var(--color-text-muted); font-size: 0.875rem; padding: 0 1rem; display: flex; align-items: center;">
-            Trang {{ currentPage }}
+            Trang {{ currentPage }} / {{ totalPages }}
           </span>
 
           <button @click="nextPage" class="btn btn--primary">
@@ -66,9 +216,9 @@ const openFilmInfo = (slug: string) => {
         <div class="product-hero__panel-row">
           <div>
             <p class="product-hero__panel-label">Tổng phim</p>
-            <p class="product-hero__panel-value">27,381</p>
+            <p class="product-hero__panel-value">{{ totalItems.toLocaleString("vi-VN") }}</p>
           </div>
-          <span class="product-hero__panel-chip">Live</span>
+          <span class="product-hero__panel-chip">{{ activeFilterLabel }}</span>
         </div>
 
         <div class="product-hero__panel-row">
@@ -120,7 +270,7 @@ const openFilmInfo = (slug: string) => {
           <!-- Poster Image -->
           <div class="film-card__poster">
             <img 
-              :src="film.poster_url || film.thumb_url" 
+              :src="resolveImageUrl(film.poster_url || film.thumb_url)" 
               :alt="film.name"
               class="film-card__image"
             />
@@ -181,8 +331,9 @@ const openFilmInfo = (slug: string) => {
           Page <span class="pagination-number">{{ currentPage }}</span>
         </span>
 
-        <button 
+          <button 
           @click="nextPage"
+            :disabled="currentPage >= totalPages"
           class="btn btn--primary"
         >
           Next →
