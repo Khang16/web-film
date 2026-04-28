@@ -1,0 +1,15 @@
+{
+  "common": {
+    "hello": "Xin chào",
+    "welcome": "Chào mừng bạn"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất"
+  },
+  "header": {
+    "home": "Trang chủ",
+    "product":  "Sản phẩm",
+    "about": "Về chúng tôi"
+  } 
+}
