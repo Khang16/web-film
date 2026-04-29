@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { useFetchProducts } from "../services/product.query";
+
+const { t } = useI18n();
 
 const { data, isLoading, isError, error } = useFetchProducts();
 
@@ -21,41 +24,40 @@ const formatPrice = (value: number | string) => {
   <div>
     <section class="product-hero">
       <div class="product-hero__copy">
-        <div class="badge badge--brand">Market overview</div>
+        <div class="badge badge--brand">{{ t("product.hero.badge") }}</div>
 
         <h1 class="product-hero__title">
-          Một giao diện tối, gọn và nhiều tín hiệu hơn.
+          {{ t("product.hero.title") }}
         </h1>
 
         <p class="product-hero__lead">
-          Danh mục sản phẩm được trình bày theo phong cách trading: nền tối,
-          một accent vàng duy nhất, các mảng nội dung phẳng và nhịp đo bằng rem.
+          {{ t("product.hero.lead") }}
         </p>
 
         <div class="product-hero__actions">
           <router-link to="/login" class="btn btn--secondary">
-            Đăng nhập
+            {{ t("product.hero.login") }}
           </router-link>
 
           <router-link to="/product" class="btn btn--primary">
-            Làm mới danh mục
+            {{ t("product.hero.refresh") }}
           </router-link>
         </div>
 
         <div class="product-hero__stats">
           <div class="metric-card">
             <p class="metric-card__value">{{ productList.length }}</p>
-            <p class="metric-card__label">Sản phẩm đang hiển thị</p>
+            <p class="metric-card__label">{{ t("product.hero.stats.productsShown") }}</p>
           </div>
 
           <div class="metric-card">
-            <p class="metric-card__value">Yellow</p>
-            <p class="metric-card__label">Accent duy nhất cho CTA</p>
+            <p class="metric-card__value">{{ t("product.hero.stats.accentValue") }}</p>
+            <p class="metric-card__label">{{ t("product.hero.stats.accentLabel") }}</p>
           </div>
 
           <div class="metric-card">
-            <p class="metric-card__value">rem</p>
-            <p class="metric-card__label">Tất cả kích thước dùng rem</p>
+            <p class="metric-card__value">{{ t("product.hero.stats.scaleValue") }}</p>
+            <p class="metric-card__label">{{ t("product.hero.stats.scaleLabel") }}</p>
           </div>
         </div>
       </div>
@@ -63,26 +65,26 @@ const formatPrice = (value: number | string) => {
       <div class="product-hero__panel">
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Canvas</p>
-            <p class="product-hero__panel-value">Deep near-black</p>
+            <p class="product-hero__panel-label">{{ t("product.hero.panel.canvas") }}</p>
+            <p class="product-hero__panel-value">{{ t("product.hero.panel.canvasValue") }}</p>
           </div>
-          <span class="product-hero__panel-chip">Stable</span>
+          <span class="product-hero__panel-chip">{{ t("product.hero.panel.stable") }}</span>
         </div>
 
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Primary</p>
-            <p class="product-hero__panel-value">#FCD535</p>
+            <p class="product-hero__panel-label">{{ t("product.hero.panel.primary") }}</p>
+            <p class="product-hero__panel-value">{{ t("product.hero.panel.primaryValue") }}</p>
           </div>
-          <span class="badge badge--brand">Yellow</span>
+          <span class="badge badge--brand">{{ t("product.hero.panel.primaryBadge") }}</span>
         </div>
 
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Layout</p>
-            <p class="product-hero__panel-value">Flat cards + hairlines</p>
+            <p class="product-hero__panel-label">{{ t("product.hero.panel.layout") }}</p>
+            <p class="product-hero__panel-value">{{ t("product.hero.panel.layoutValue") }}</p>
           </div>
-          <span class="badge badge--muted">Binance-like</span>
+          <span class="badge badge--muted">{{ t("product.hero.panel.layoutBadge") }}</span>
         </div>
       </div>
     </section>
@@ -90,9 +92,9 @@ const formatPrice = (value: number | string) => {
     <section class="product-section page__section">
       <div class="product-section__head">
         <div>
-          <h2 class="product-section__title">Product List</h2>
+          <h2 class="product-section__title">{{ t("product.section.title") }}</h2>
           <p class="product-section__subtitle">
-            Sản phẩm được đặt vào card tối với giá và CTA vàng.
+            {{ t("product.section.subtitle") }}
           </p>
         </div>
       </div>
@@ -121,8 +123,8 @@ const formatPrice = (value: number | string) => {
             </h3>
 
             <div class="product-card__meta">
-              <span>Live item</span>
-              <span class="badge badge--muted">Updated</span>
+              <span>{{ t("product.card.liveItem") }}</span>
+              <span class="badge badge--muted">{{ t("product.card.updated") }}</span>
             </div>
 
             <p class="product-card__price">
@@ -130,7 +132,7 @@ const formatPrice = (value: number | string) => {
             </p>
 
             <button class="btn btn--primary product-card__button">
-              View Detail
+              {{ t("product.card.viewDetail") }}
             </button>
           </div>
         </article>

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useFetchCountries, useFetchGenres } from "../../views/over-view/services/over-view.query";
+import { overViewApi } from "../../views/over-view/services/over-view.api";
+import type { IOverViewFilm } from "../../views/over-view/services/types/over-view.interface";
+
+const { t, locale } = useI18n();
 
 const router = useRouter();
 const route = useRoute();
@@ -13,20 +18,40 @@ const searchKeyword = ref("");
 const genreMenuRef = ref<HTMLElement | null>(null);
 const yearMenuRef = ref<HTMLElement | null>(null);
 const countryMenuRef = ref<HTMLElement | null>(null);
+const searchContainerRef = ref<HTMLElement | null>(null);
+const searchSuggestions = ref<IOverViewFilm[]>([]);
+const isSuggestOpen = ref(false);
+const isSuggestLoading = ref(false);
+let searchDebounceId: number | undefined;
+const minSearchChars = 2;
+
+const IMAGE_CDN_BASE = "https://phimimg.com/";
+
+const resolveImageUrl = (url?: string | null) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("//")) return `https:${url}`;
+
+  return new URL(url.replace(/^\/+/, ""), IMAGE_CDN_BASE).toString();
+};
 
 const { data: genres } = useFetchGenres();
 const { data: countries } = useFetchCountries();
 
 const genreList = computed(() => genres.value ?? []);
 const countryList = computed(() => countries.value ?? []);
-const currentGenreLabel = computed(() => String(route.query.genreName ?? "Thể loại"));
-const currentYearLabel = computed(() => String(route.query.yearName ?? "Năm"));
-const currentCountryLabel = computed(() => String(route.query.countryName ?? "Quốc gia"));
+const currentGenreLabel = computed(() => String(route.query.genreName ?? t("header.genre")));
+const currentYearLabel = computed(() => String(route.query.yearName ?? t("header.year")));
+const currentCountryLabel = computed(() => String(route.query.countryName ?? t("header.country")));
 const currentListType = computed(() => String(route.query.listType ?? ""));
 const yearList = computed(() => {
   const currentYear = new Date().getFullYear();
   return Array.from({ length: currentYear - 1970 + 1 }, (_, index) => currentYear - index);
 });
+
+const toggleLocale = () => {
+  locale.value = locale.value === "vi" ? "en" : "vi";
+};
 
 const goHome = () => {
   genreMenuOpen.value = false;
@@ -131,6 +156,7 @@ const submitSearch = () => {
   }
 
   mobileMenuOpen.value = false;
+  isSuggestOpen.value = false;
 
   router.push({
     path: "/overview",
@@ -144,16 +170,41 @@ const goAllFilms = () => {
   countryMenuOpen.value = false;
   mobileMenuOpen.value = false;
   searchKeyword.value = "";
+  isSuggestOpen.value = false;
+  searchSuggestions.value = [];
   router.push({ path: "/overview" });
 };
 
+const selectSuggestion = (film: IOverViewFilm) => {
+  isSuggestOpen.value = false;
+  searchSuggestions.value = [];
+  searchKeyword.value = film.name;
+  router.push(`/overview/${film.slug}`);
+};
+
+const fetchSuggestions = async (keyword: string) => {
+  try {
+    const res = await overViewApi.getFilmsByKeyword(keyword, 1);
+    if (sanitizeQuery(searchKeyword.value) !== keyword) return;
+    searchSuggestions.value = (res.items ?? []).slice(0, 8);
+  } catch (error) {
+    if (sanitizeQuery(searchKeyword.value) !== keyword) return;
+    searchSuggestions.value = [];
+  } finally {
+    if (sanitizeQuery(searchKeyword.value) === keyword) {
+      isSuggestLoading.value = false;
+    }
+  }
+};
+
 const handleDocumentClick = (event: MouseEvent) => {
-  if (!genreMenuOpen.value && !yearMenuOpen.value && !countryMenuOpen.value) return;
+  if (!genreMenuOpen.value && !yearMenuOpen.value && !countryMenuOpen.value && !isSuggestOpen.value) return;
 
   const target = event.target as Node | null;
   const clickedGenreMenu = target && genreMenuRef.value && genreMenuRef.value.contains(target);
   const clickedYearMenu = target && yearMenuRef.value && yearMenuRef.value.contains(target);
   const clickedCountryMenu = target && countryMenuRef.value && countryMenuRef.value.contains(target);
+  const clickedSearch = target && searchContainerRef.value && searchContainerRef.value.contains(target);
 
   if (!clickedGenreMenu) {
     genreMenuOpen.value = false;
@@ -165,6 +216,10 @@ const handleDocumentClick = (event: MouseEvent) => {
 
   if (!clickedCountryMenu) {
     countryMenuOpen.value = false;
+  }
+
+  if (!clickedSearch) {
+    isSuggestOpen.value = false;
   }
 };
 
@@ -184,9 +239,32 @@ watch(
     countryMenuOpen.value = false;
     mobileMenuOpen.value = false;
     searchKeyword.value = String(route.query.keyword ?? "");
+    isSuggestOpen.value = false;
   },
   { immediate: true },
 );
+
+watch(searchKeyword, (value) => {
+  const keyword = sanitizeQuery(value);
+
+  if (searchDebounceId) {
+    window.clearTimeout(searchDebounceId);
+  }
+
+  if (keyword.length < minSearchChars) {
+    isSuggestLoading.value = false;
+    isSuggestOpen.value = false;
+    searchSuggestions.value = [];
+    return;
+  }
+
+  isSuggestLoading.value = true;
+  isSuggestOpen.value = true;
+
+  searchDebounceId = window.setTimeout(() => {
+    void fetchSuggestions(keyword);
+  }, 100);
+});
 </script>
 
 <template>
@@ -196,31 +274,79 @@ watch(
       type="button"
       class="header__backdrop"
       @click="mobileMenuOpen = false"
-      aria-label="Đóng menu"
+      :aria-label="t('header.closeMenu')"
     />
 
     <div class="header__inner">
       <div class="header__topbar">
         <div class="header__brand" @click="goHome">THẬT MÀ</div>
 
-        <div class="header__search">
-          <label class="search-field" aria-label="Search products">
+        <div class="header__search" ref="searchContainerRef">
+          <label class="search-field" :aria-label="t('header.searchAriaLabel')">
             <span class="search-field__icon">⌕</span>
             <input
               v-model="searchKeyword"
               @keyup.enter="submitSearch"
+              @focus="isSuggestOpen = sanitizeQuery(searchKeyword).length >= minSearchChars"
+              @keydown.esc="isSuggestOpen = false"
               class="search-field__input"
               type="search"
-              placeholder="Tìm phim..."
+              :placeholder="t('header.searchPlaceholder')"
             />
           </label>
 
-          <button type="button" class="btn btn--primary btn--small" @click="submitSearch">Tìm kiếm</button>
+          <button type="button" class="btn btn--primary btn--small" @click="submitSearch">
+            {{ t("header.searchButton") }}
+          </button>
+
+          <div v-if="isSuggestOpen" class="search-suggest" role="listbox">
+            <div v-if="isSuggestLoading" class="search-suggest__state">
+              {{ t("header.searchLoading") }}
+            </div>
+
+            <div v-else-if="!searchSuggestions.length" class="search-suggest__state">
+              {{ t("header.searchEmpty") }}
+            </div>
+
+            <button
+              v-else
+              v-for="film in searchSuggestions"
+              :key="film._id"
+              type="button"
+              class="search-suggest__item"
+              role="option"
+              @click="selectSuggestion(film)"
+            >
+              <img
+                class="search-suggest__thumb"
+                :src="resolveImageUrl(film.poster_url || film.thumb_url)"
+                :alt="film.name"
+                loading="lazy"
+              />
+              <span class="search-suggest__title">{{ film.name }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="header__actions">
+          <button
+            type="button"
+            class="btn btn--secondary btn--small header__lang-toggle"
+            @click="toggleLocale"
+            :aria-label="t('header.toggleLanguage')"
+          >
+            {{ locale === "vi" ? "VI" : "EN" }}
+          </button>
         </div>
 
         <!-- <router-link to="/login" class="btn btn--secondary btn--small header__member">Thành viên</router-link> -->
 
-        <button type="button" class="header__menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Mở menu">
+        <button
+          type="button"
+          class="header__menu-toggle"
+          @click="mobileMenuOpen = !mobileMenuOpen"
+          :aria-label="t('header.openMenu')"
+        >
           <span class="header__menu-line" />
           <span class="header__menu-line" />
           <span class="header__menu-line" />
@@ -228,23 +354,28 @@ watch(
       </div>
 
       <div class="header__menu" :class="{ 'header__menu--open': mobileMenuOpen }">
-        <button type="button" class="header__menu-close" @click="mobileMenuOpen = false" aria-label="Đóng menu">
+        <button
+          type="button"
+          class="header__menu-close"
+          @click="mobileMenuOpen = false"
+          :aria-label="t('header.closeMenu')"
+        >
           ×
         </button>
 
-        <nav class="top-nav" aria-label="Primary">
-          <router-link to="/overview" class="top-nav__link"> Phim </router-link>
+        <nav class="top-nav" :aria-label="t('header.primaryNavAria')">
+          <router-link to="/overview" class="top-nav__link"> {{ t("header.navFilms") }} </router-link>
 
           <div ref="genreMenuRef" class="top-nav__genre">
             <button class="top-nav__link top-nav__link--button" type="button" @click="toggleGenreMenu">
-              Thể loại
+              {{ t("header.genre") }}
               <strong>{{ currentGenreLabel }}</strong>
             </button>
 
             <div v-if="genreMenuOpen" class="genre-menu__panel">
               <div class="genre-menu__head">
-                <span>Chọn thể loại</span>
-                <button class="genre-menu__all" type="button" @click="goAllFilms">Tất cả phim</button>
+                <span>{{ t("header.chooseGenre") }}</span>
+                <button class="genre-menu__all" type="button" @click="goAllFilms">{{ t("header.allFilms") }}</button>
               </div>
 
               <div class="genre-menu__list">
@@ -263,14 +394,14 @@ watch(
 
           <div ref="yearMenuRef" class="top-nav__genre">
             <button class="top-nav__link top-nav__link--button" type="button" @click="toggleYearMenu">
-              Năm
+              {{ t("header.year") }}
               <strong>{{ currentYearLabel }}</strong>
             </button>
 
             <div v-if="yearMenuOpen" class="genre-menu__panel genre-menu__panel--year">
               <div class="genre-menu__head">
-                <span>Chọn năm</span>
-                <button class="genre-menu__all" type="button" @click="goAllFilms">Tất cả phim</button>
+                <span>{{ t("header.chooseYear") }}</span>
+                <button class="genre-menu__all" type="button" @click="goAllFilms">{{ t("header.allFilms") }}</button>
               </div>
 
               <div class="year-menu__list">
@@ -289,14 +420,14 @@ watch(
 
           <div ref="countryMenuRef" class="top-nav__genre">
             <button class="top-nav__link top-nav__link--button" type="button" @click="toggleCountryMenu">
-              Quốc gia
+              {{ t("header.country") }}
               <strong>{{ currentCountryLabel }}</strong>
             </button>
 
             <div v-if="countryMenuOpen" class="genre-menu__panel genre-menu__panel--year">
               <div class="genre-menu__head">
-                <span>Chọn quốc gia</span>
-                <button class="genre-menu__all" type="button" @click="goAllFilms">Tất cả phim</button>
+                <span>{{ t("header.chooseCountry") }}</span>
+                <button class="genre-menu__all" type="button" @click="goAllFilms">{{ t("header.allFilms") }}</button>
               </div>
 
               <div class="country-menu__list">
@@ -318,25 +449,25 @@ watch(
               type="button"
               class="top-nav__link top-nav__link--button"
               :class="{ 'top-nav__link--active': currentListType === 'phim-le' }"
-              @click="selectListType('phim-le', 'Phim lẻ')"
+              @click="selectListType('phim-le', t('header.movieSingle'))"
             >
-              Phim lẻ
+              {{ t("header.movieSingle") }}
             </button>
             <button
               type="button"
               class="top-nav__link top-nav__link--button"
               :class="{ 'top-nav__link--active': currentListType === 'phim-bo' }"
-              @click="selectListType('phim-bo', 'Phim bộ')"
+              @click="selectListType('phim-bo', t('header.series'))"
             >
-              Phim bộ
+              {{ t("header.series") }}
             </button>
             <button
               type="button"
               class="top-nav__link top-nav__link--button"
               :class="{ 'top-nav__link--active': currentListType === 'phim-chieu-rap' }"
-              @click="selectListType('phim-chieu-rap', 'Phim chiếu rạp')"
+              @click="selectListType('phim-chieu-rap', t('header.cinema'))"
             >
-              Phim chiếu rạp
+              {{ t("header.cinema") }}
             </button>
           </div>
 
@@ -368,10 +499,67 @@ watch(
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
+}
+.search-suggest {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: var(--color-surface-dark);
+  border: 0.0625rem solid var(--color-hairline-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  z-index: 40;
+  overflow: hidden;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.search-suggest__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-dark);
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-suggest__item:hover {
+  background: rgb(252 213 53 / 0.08);
+}
+
+.search-suggest__thumb {
+  width: 2.25rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  flex: 0 0 auto;
+}
+
+.search-suggest__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.search-suggest__state {
+  padding: 0.75rem 0.9rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
 }
 
 .header__member {
   white-space: nowrap;
+}
+
+.header__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .top-nav__genre {
@@ -545,14 +733,25 @@ watch(
     justify-content: space-between;
   }
 
+  .header__brand {
+    order: 1;
+  }
+
+  .header__actions {
+    order: 2;
+    width: auto;
+    margin-left: auto;
+  }
+
   .header__search {
-    order: 3;
+    order: 4;
     width: 100%;
   }
 
   .header__menu-toggle {
     display: inline-flex;
     z-index: 35;
+    order: 3;
   }
 
   .header__menu {
@@ -598,8 +797,7 @@ watch(
     justify-content: center;
   }
 
-  .top-nav,
-  .header__actions {
+  .top-nav {
     width: 100%;
   }
 

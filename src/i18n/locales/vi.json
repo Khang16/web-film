@@ -5,11 +5,182 @@
   },
   "auth": {
     "login": "Đăng nhập",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "loginError": "Sai tài khoản hoặc mật khẩu",
+    "secureAccess": "Bảo mật truy cập",
+    "loginLead": "Đăng nhập để tiếp tục trong giao diện tối, một accent vàng và hệ thống màu được gom vào style.css.",
+    "usernamePlaceholder": "Tên đăng nhập",
+    "passwordPlaceholder": "Mật khẩu",
+    "backToCatalog": "Về danh mục"
   },
   "header": {
     "home": "Trang chủ",
-    "product":  "Sản phẩm",
-    "about": "Về chúng tôi"
-  } 
+    "product": "Sản phẩm",
+    "about": "Về chúng tôi",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "searchAriaLabel": "Tìm phim",
+    "searchPlaceholder": "Tìm phim...",
+    "searchButton": "Tìm kiếm",
+    "searchLoading": "Đang tìm kiếm...",
+    "searchEmpty": "Không tìm thấy phim phù hợp",
+    "toggleLanguage": "Chuyển đổi ngôn ngữ",
+    "navFilms": "Phim",
+    "genre": "Thể loại",
+    "year": "Năm",
+    "country": "Quốc gia",
+    "chooseGenre": "Chọn thể loại",
+    "chooseYear": "Chọn năm",
+    "chooseCountry": "Chọn quốc gia",
+    "allFilms": "Tất cả phim",
+    "movieSingle": "Phim lẻ",
+    "series": "Phim bộ",
+    "cinema": "Phim chiếu rạp",
+    "primaryNavAria": "Điều hướng chính"
+  },
+  "sidebar": {
+    "brandTitle": "VueFilm",
+    "brandSubtitle": "Nền tối · nhấn vàng · đo bằng rem",
+    "liveShell": "Khung live",
+    "productFeed": "Dòng sản phẩm",
+    "active": "Đang hoạt động",
+    "productFeedMeta": "Catalog được chọn trên nền tối phẳng.",
+    "signals": "Tín hiệu",
+    "watch": "Theo dõi",
+    "signalsMeta": "CTA vàng, xanh/đỏ trading, khối thông tin dày.",
+    "settings": "Thiết lập",
+    "sync": "Đồng bộ",
+    "settingsMeta": "Typography, rhythm và token màu nằm chung một file.",
+    "note": "Mọi màu chung đều được gom về <strong>style.css</strong>."
+  },
+  "notFound": {
+    "title": "Trang này không tồn tại.",
+    "lead": "Đường dẫn đã bị xóa, đổi tên hoặc chưa được gắn vào layout hiện tại.",
+    "backToCatalog": "Về danh mục",
+    "goToLogin": "Đi tới đăng nhập"
+  },
+  "overview": {
+    "title": {
+      "keyword": "Từ khóa: {keyword}",
+      "latest": "Phim Mới Cập Nhật"
+    },
+    "lead": {
+      "keyword": "Kết quả tìm kiếm cho từ khóa \"{keyword}\".",
+      "list": "Danh sách {listName} mới cập nhật.",
+      "yearGenre": "Danh sách phim năm {year}, thể loại {genre}.",
+      "year": "Danh sách phim năm {year}.",
+      "countryGenre": "Danh sách phim quốc gia {country}, thể loại {genre}.",
+      "country": "Danh sách phim quốc gia {country}.",
+      "genre": "Danh sách phim thể loại {genre}.",
+      "latest": "Danh sách phim mới được cập nhật liên tục với các đánh giá từ TMDB, IMDb, và tính năng xem phim trực tuyến."
+    },
+    "activeFilter": {
+      "search": "Tìm kiếm",
+      "live": "Live"
+    },
+    "heroBadge": "Khám phá phim",
+    "clearSearch": "Bỏ tìm kiếm",
+    "clearYear": "Bỏ lọc năm",
+    "clearCountry": "Bỏ lọc quốc gia",
+    "allFilms": "Tất cả phim",
+    "prevPage": "← Trang trước",
+    "nextPage": "Trang sau →",
+    "pageStatus": "Trang {page} / {total}",
+    "panel": {
+      "total": "Tổng phim",
+      "latest": "Mới nhất",
+      "today": "Hôm nay",
+      "updated": "Updated",
+      "format": "Định dạng",
+      "formatValue": "TV & Film",
+      "allTypes": "All types"
+    },
+    "section": {
+      "title": "Bộ sưu tập phim",
+      "subtitle": "Danh sách phim mới cập nhật với poster, đánh giá, và năm phát hành."
+    },
+    "errorLoadFilms": "Lỗi khi tải dữ liệu phim",
+    "filmTypeDefault": "Film",
+    "votes": "{count} lượt",
+    "filmInfo": "Thông tin phim",
+    "pagination": {
+      "prev": "← Trước",
+      "page": "Trang {page}",
+      "next": "Sau →"
+    },
+    "spotlight": {
+      "koreaTitle": "Phim Hàn Quốc mới nhất",
+      "koreaSubtitle": "Tuyển chọn phim mới cập nhật trong ngày.",
+      "cinemaTitle": "Phim chiếu rạp",
+      "cinemaSubtitle": "Tuyển chọn phim chiếu rạp mới cập nhật.",
+      "scrollRight": "Cuộn danh sách sang phải",
+      "episodePrefix": "PD.",
+      "ratingPrefix": "TM.",
+      "full": "Full",
+      "vietsub": "Vietsub"
+    }
+  },
+  "inforFilm": {
+    "badge": {
+      "series": "Series",
+      "movie": "Movie"
+    },
+    "back": "← Quay lại",
+    "watchTrailer": "Xem trailer",
+    "rating": "Đánh giá",
+    "currentEpisode": "Tập hiện tại",
+    "episodeTotal": "{total} tập",
+    "language": "Ngôn ngữ",
+    "loading": "Đang tải thông tin phim...",
+    "errorLoad": "Lỗi khi tải thông tin phim",
+    "sectionTitle": "Thông tin phim",
+    "year": "Năm",
+    "duration": "Thời lượng",
+    "status": "Trạng thái",
+    "description": "Mô tả",
+    "actor": "Diễn viên",
+    "director": "Đạo diễn",
+    "genre": "Thể loại",
+    "country": "Quốc gia",
+    "watchTitle": "Xem phim",
+    "watchSubtitle": "Chọn server và tập để phát ngay trong trang.",
+    "selectEpisode": "Chọn một tập để bắt đầu xem.",
+    "updating": "Đang cập nhật"
+  },
+  "product": {
+    "hero": {
+      "badge": "Tổng quan thị trường",
+      "title": "Một giao diện tối, gọn và nhiều tín hiệu hơn.",
+      "lead": "Danh mục sản phẩm được trình bày theo phong cách trading: nền tối, một accent vàng duy nhất, các mảng nội dung phẳng và nhịp đo bằng rem.",
+      "login": "Đăng nhập",
+      "refresh": "Làm mới danh mục",
+      "stats": {
+        "productsShown": "Sản phẩm đang hiển thị",
+        "accentValue": "Yellow",
+        "accentLabel": "Accent duy nhất cho CTA",
+        "scaleValue": "rem",
+        "scaleLabel": "Tất cả kích thước dùng rem"
+      },
+      "panel": {
+        "canvas": "Canvas",
+        "canvasValue": "Deep near-black",
+        "stable": "Stable",
+        "primary": "Primary",
+        "primaryValue": "#FCD535",
+        "primaryBadge": "Yellow",
+        "layout": "Layout",
+        "layoutValue": "Flat cards + hairlines",
+        "layoutBadge": "Binance-like"
+      }
+    },
+    "section": {
+      "title": "Danh sách sản phẩm",
+      "subtitle": "Sản phẩm được đặt vào card tối với giá và CTA vàng."
+    },
+    "card": {
+      "liveItem": "Mục live",
+      "updated": "Updated",
+      "viewDetail": "Xem chi tiết"
+    }
+  }
 }
