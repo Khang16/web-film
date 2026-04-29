@@ -218,7 +218,7 @@ watch(
           <button type="button" class="btn btn--primary btn--small" @click="submitSearch">Tìm kiếm</button>
         </div>
 
-        <router-link to="/login" class="btn btn--secondary btn--small header__member">Thành viên</router-link>
+        <!-- <router-link to="/login" class="btn btn--secondary btn--small header__member">Thành viên</router-link> -->
 
         <button type="button" class="header__menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Mở menu">
           <span class="header__menu-line" />
