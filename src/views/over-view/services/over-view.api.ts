@@ -227,4 +227,53 @@ export const overViewApi = {
       pagination: normalizePagination(response.data?.params?.pagination),
     };
   },
+
+  async getFilmsByListType(
+    listType: string,
+    page: number,
+    categorySlug?: string,
+    countrySlug?: string,
+    yearSlug?: string,
+  ): Promise<IFilmPageResult> {
+    const queryParts = new URLSearchParams({
+      page: String(page),
+      sort_field: "modified.time",
+      sort_type: "desc",
+      sort_lang: "vietsub",
+      limit: "10",
+    });
+
+    if (categorySlug) {
+      queryParts.set("category", categorySlug);
+    }
+
+    if (countrySlug) {
+      queryParts.set("country", countrySlug);
+    }
+
+    if (yearSlug) {
+      queryParts.set("year", yearSlug);
+    }
+
+    const response = await axiosClient.get<{
+      data?: {
+        items?: IOverViewFilm[] | null;
+        params?: {
+          pagination?: PaginationMeta;
+        };
+      };
+    }>(`v1/api/danh-sach/${listType}?${queryParts.toString()}`) as unknown as {
+      data?: {
+        items?: IOverViewFilm[] | null;
+        params?: {
+          pagination?: PaginationMeta;
+        };
+      };
+    };
+
+    return {
+      items: response.data?.items ?? [],
+      pagination: normalizePagination(response.data?.params?.pagination),
+    };
+  },
 };

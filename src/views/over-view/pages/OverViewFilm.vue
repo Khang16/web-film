@@ -2,7 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useRoute } from "vue-router";
-import { useFetchOverViewFilm } from "../services/over-view.query";
+import { useFetchCountrySpotlight, useFetchListSpotlight, useFetchOverViewFilm } from "../services/over-view.query";
 
 const IMAGE_CDN_BASE = "https://phimimg.com/";
 
@@ -15,6 +15,18 @@ const resolveImageUrl = (url?: string | null) => {
 };
 
 const currentPage = ref(1);
+const spotlightGridRef = ref<HTMLElement | null>(null);
+const isSpotlightDragging = ref(false);
+const spotlightDragStartX = ref(0);
+const spotlightScrollStart = ref(0);
+const spotlightDragThreshold = 6;
+const isSpotlightPointerActive = ref(false);
+const cinemaGridRef = ref<HTMLElement | null>(null);
+const isCinemaDragging = ref(false);
+const cinemaDragStartX = ref(0);
+const cinemaScrollStart = ref(0);
+const cinemaDragThreshold = 6;
+const isCinemaPointerActive = ref(false);
 const route = useRoute();
 const router = useRouter();
 const genreSlug = computed(() => String(route.query.genre ?? ""));
@@ -24,9 +36,11 @@ const yearName = computed(() => String(route.query.yearName ?? ""));
 const countrySlug = computed(() => String(route.query.country ?? ""));
 const countryName = computed(() => String(route.query.countryName ?? ""));
 const keyword = computed(() => String(route.query.keyword ?? ""));
+const listType = computed(() => String(route.query.listType ?? ""));
+const listName = computed(() => String(route.query.listName ?? ""));
 
 watch(
-  () => [genreSlug.value, yearSlug.value, countrySlug.value, keyword.value],
+  () => [genreSlug.value, yearSlug.value, countrySlug.value, keyword.value, listType.value],
   () => {
     currentPage.value = 1;
   },
@@ -39,18 +53,25 @@ const { data, isLoading, isError, error } = useFetchOverViewFilm(
   yearSlug,
   countrySlug,
   keyword,
+  listType,
 );
 
+const { data: koreaData, isLoading: isKoreaLoading, isError: isKoreaError } = useFetchCountrySpotlight("han-quoc");
+const { data: cinemaData, isLoading: isCinemaLoading, isError: isCinemaError } = useFetchListSpotlight("phim-chieu-rap");
+
 const filmList = computed(() => data.value?.items ?? []);
-const hasSingleResult = computed(() => filmList.value.length === 1);
+const koreaSpotlight = computed(() => koreaData.value?.items ?? []);
+const cinemaSpotlight = computed(() => cinemaData.value?.items ?? []);
 const totalPages = computed(() => data.value?.pagination.totalPages ?? 1);
 const totalItems = computed(() => data.value?.pagination.totalItems ?? filmList.value.length);
 const hasGenreFilter = computed(() => Boolean(genreSlug.value));
 const hasYearFilter = computed(() => Boolean(yearSlug.value));
 const hasCountryFilter = computed(() => Boolean(countrySlug.value));
 const hasKeywordFilter = computed(() => Boolean(keyword.value));
+const hasListType = computed(() => Boolean(listType.value));
 const titleLabel = computed(() => {
   if (hasKeywordFilter.value) return `Từ khóa: ${keyword.value}`;
+  if (hasListType.value) return listName.value || listType.value;
   if (hasYearFilter.value) return yearName.value || yearSlug.value;
   if (hasCountryFilter.value) return countryName.value || countrySlug.value;
   if (hasGenreFilter.value) return genreName.value || genreSlug.value;
@@ -59,6 +80,10 @@ const titleLabel = computed(() => {
 const leadText = computed(() => {
   if (hasKeywordFilter.value) {
     return `Kết quả tìm kiếm cho từ khóa \"${keyword.value}\".`;
+  }
+
+  if (hasListType.value) {
+    return `Danh sách ${listName.value || listType.value} mới cập nhật.`;
   }
 
   if (hasYearFilter.value) {
@@ -81,6 +106,7 @@ const leadText = computed(() => {
 });
 const activeFilterLabel = computed(() => {
   if (hasKeywordFilter.value) return "Search";
+  if (hasListType.value) return listName.value || listType.value;
   if (hasYearFilter.value) return yearName.value || yearSlug.value;
   if (hasCountryFilter.value) return countryName.value || countrySlug.value;
   if (hasGenreFilter.value) return genreName.value || genreSlug.value;
@@ -94,6 +120,8 @@ const clearYearFilter = () => {
       genreName: genreName.value,
       country: countrySlug.value,
       countryName: countryName.value,
+      listType: listType.value,
+      listName: listName.value,
     },
   });
 };
@@ -107,6 +135,8 @@ const clearCountryFilter = () => {
       year: yearSlug.value,
       yearName: yearName.value,
       keyword: keyword.value,
+      listType: listType.value,
+      listName: listName.value,
     },
   });
 };
@@ -121,6 +151,8 @@ const clearKeywordFilter = () => {
       yearName: yearName.value,
       country: countrySlug.value,
       countryName: countryName.value,
+      listType: listType.value,
+      listName: listName.value,
     },
   });
 };
@@ -137,8 +169,6 @@ const getRatingColor = (rating: number) => {
   return "#707a8a"; // muted
 };
 
-
-
 const nextPage = () => {
   currentPage.value += 1;
 };
@@ -153,6 +183,105 @@ const openFilmInfo = (slug: string) => {
   router.push(`/overview/${slug}`);
 };
 
+const scrollSpotlightRight = () => {
+  if (!spotlightGridRef.value) return;
+  spotlightGridRef.value.scrollBy({
+    left: spotlightGridRef.value.clientWidth * 0.85,
+    behavior: "smooth",
+  });
+};
+
+const scrollCinemaRight = () => {
+  if (!cinemaGridRef.value) return;
+  cinemaGridRef.value.scrollBy({
+    left: cinemaGridRef.value.clientWidth * 0.85,
+    behavior: "smooth",
+  });
+};
+
+const onSpotlightPointerDown = (event: PointerEvent) => {
+  if (!spotlightGridRef.value) return;
+  isSpotlightPointerActive.value = true;
+  isSpotlightDragging.value = false;
+  spotlightGridRef.value.setPointerCapture(event.pointerId);
+  spotlightDragStartX.value = event.clientX;
+  spotlightScrollStart.value = spotlightGridRef.value.scrollLeft;
+};
+
+const onSpotlightPointerMove = (event: PointerEvent) => {
+  if (!spotlightGridRef.value) return;
+  if (!isSpotlightPointerActive.value) return;
+  if (event.buttons === 0) {
+    isSpotlightDragging.value = false;
+    isSpotlightPointerActive.value = false;
+    return;
+  }
+  const delta = event.clientX - spotlightDragStartX.value;
+  if (!isSpotlightDragging.value && Math.abs(delta) < spotlightDragThreshold) return;
+  isSpotlightDragging.value = true;
+  spotlightGridRef.value.scrollLeft = spotlightScrollStart.value - delta;
+};
+
+const onSpotlightPointerUp = (event: PointerEvent) => {
+  if (!spotlightGridRef.value) return;
+  isSpotlightDragging.value = false;
+  isSpotlightPointerActive.value = false;
+  spotlightGridRef.value.releasePointerCapture(event.pointerId);
+};
+
+const onSpotlightPointerCancel = (event: PointerEvent) => {
+  if (!spotlightGridRef.value) return;
+  isSpotlightDragging.value = false;
+  isSpotlightPointerActive.value = false;
+  spotlightGridRef.value.releasePointerCapture(event.pointerId);
+};
+
+const onCinemaPointerDown = (event: PointerEvent) => {
+  if (!cinemaGridRef.value) return;
+  isCinemaPointerActive.value = true;
+  isCinemaDragging.value = false;
+  cinemaGridRef.value.setPointerCapture(event.pointerId);
+  cinemaDragStartX.value = event.clientX;
+  cinemaScrollStart.value = cinemaGridRef.value.scrollLeft;
+};
+
+const onCinemaPointerMove = (event: PointerEvent) => {
+  if (!cinemaGridRef.value) return;
+  if (!isCinemaPointerActive.value) return;
+  if (event.buttons === 0) {
+    isCinemaDragging.value = false;
+    isCinemaPointerActive.value = false;
+    return;
+  }
+  const delta = event.clientX - cinemaDragStartX.value;
+  if (!isCinemaDragging.value && Math.abs(delta) < cinemaDragThreshold) return;
+  isCinemaDragging.value = true;
+  cinemaGridRef.value.scrollLeft = cinemaScrollStart.value - delta;
+};
+
+const onCinemaPointerUp = (event: PointerEvent) => {
+  if (!cinemaGridRef.value) return;
+  isCinemaDragging.value = false;
+  isCinemaPointerActive.value = false;
+  cinemaGridRef.value.releasePointerCapture(event.pointerId);
+};
+
+const onCinemaPointerCancel = (event: PointerEvent) => {
+  if (!cinemaGridRef.value) return;
+  isCinemaDragging.value = false;
+  isCinemaPointerActive.value = false;
+  cinemaGridRef.value.releasePointerCapture(event.pointerId);
+};
+
+const onSpotlightWindowPointerUp = () => {
+  isSpotlightDragging.value = false;
+  isSpotlightPointerActive.value = false;
+  isCinemaDragging.value = false;
+  isCinemaPointerActive.value = false;
+};
+
+window.addEventListener("pointerup", onSpotlightWindowPointerUp);
+
 const clearGenreFilter = () => {
   router.push({
     path: "/overview",
@@ -162,6 +291,8 @@ const clearGenreFilter = () => {
       country: countrySlug.value,
       countryName: countryName.value,
       keyword: keyword.value,
+      listType: listType.value,
+      listName: listName.value,
     },
   });
 };
@@ -183,33 +314,29 @@ const clearGenreFilter = () => {
         </p>
 
         <div class="product-hero__actions">
-          <button v-if="hasKeywordFilter" @click="clearKeywordFilter" class="btn btn--ghost">
-            Bỏ tìm kiếm
-          </button>
+          <button v-if="hasKeywordFilter" @click="clearKeywordFilter" class="btn btn--ghost">Bỏ tìm kiếm</button>
 
-          <button v-if="hasYearFilter" @click="clearYearFilter" class="btn btn--ghost">
-            Bỏ lọc năm
-          </button>
+          <button v-if="hasYearFilter" @click="clearYearFilter" class="btn btn--ghost">Bỏ lọc năm</button>
 
-          <button v-if="hasCountryFilter" @click="clearCountryFilter" class="btn btn--ghost">
-            Bỏ lọc quốc gia
-          </button>
+          <button v-if="hasCountryFilter" @click="clearCountryFilter" class="btn btn--ghost">Bỏ lọc quốc gia</button>
 
-          <button v-if="hasGenreFilter" @click="clearGenreFilter" class="btn btn--ghost">
-            Tất cả phim
-          </button>
+          <button v-if="hasGenreFilter" @click="clearGenreFilter" class="btn btn--ghost">Tất cả phim</button>
 
-          <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">
-            ← Trang trước
-          </button>
+          <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">← Trang trước</button>
 
-          <span style="color: var(--color-text-muted); font-size: 0.875rem; padding: 0 1rem; display: flex; align-items: center;">
+          <span
+            style="
+              color: var(--color-text-muted);
+              font-size: 0.875rem;
+              padding: 0 1rem;
+              display: flex;
+              align-items: center;
+            "
+          >
             Trang {{ currentPage }} / {{ totalPages }}
           </span>
 
-          <button @click="nextPage" class="btn btn--primary">
-            Trang sau →
-          </button>
+          <button @click="nextPage" class="btn btn--primary">Trang sau →</button>
         </div>
       </div>
 
@@ -245,9 +372,7 @@ const clearGenreFilter = () => {
       <div class="product-section__head">
         <div>
           <h2 class="product-section__title">Film Collection</h2>
-          <p class="product-section__subtitle">
-            Danh sách phim mới cập nhật với poster, đánh giá, và năm phát hành.
-          </p>
+          <p class="product-section__subtitle">Danh sách phim mới cập nhật với poster, đánh giá, và năm phát hành.</p>
         </div>
       </div>
 
@@ -262,19 +387,11 @@ const clearGenreFilter = () => {
       </div>
 
       <!-- Film Grid -->
-      <div v-else class="product-grid" :class="{ 'product-grid--single': hasSingleResult }">
-        <article
-          v-for="film in filmList"
-          :key="film._id"
-          class="film-card"
-        >
+      <div v-else class="product-grid">
+        <article v-for="film in filmList" :key="film._id" class="film-card">
           <!-- Poster Image -->
           <div class="film-card__poster">
-            <img 
-              :src="resolveImageUrl(film.poster_url || film.thumb_url)" 
-              :alt="film.name"
-              class="film-card__image"
-            />
+            <img :src="resolveImageUrl(film.poster_url || film.thumb_url)" :alt="film.name" class="film-card__image" />
 
             <!-- Rating Badge Overlay -->
             <div v-if="film.tmdb.vote_average > 0" class="film-card__rating-badge">
@@ -287,58 +404,145 @@ const clearGenreFilter = () => {
             <!-- Type Badge -->
             <div class="film-card__type-badge">
               {{ film.tmdb.type || "Film" }}
-              <span v-if="film.tmdb.season" class="film-card__season">
-                S{{ film.tmdb.season }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Film Info -->
-          <div class="film-card__body">
-            <h3 class="film-card__title">
-              {{ film.name }}
-            </h3>
-
-            <p class="film-card__origin-name">
-              {{ film.origin_name }}
-            </p>
-
-            <div class="film-card__meta">
-              <span class="film-card__year">{{ film.year }}</span>
-              <span v-if="film.tmdb.vote_count > 0" class="film-card__votes">
-                {{ film.tmdb.vote_count }} votes
-              </span>
+              <span v-if="film.tmdb.season" class="film-card__season"> S{{ film.tmdb.season }} </span>
             </div>
 
-            <!-- Action Button (Bấm vào đây sẽ ra trang thông tin film (InforFilm.vue)) -->
-            <button class="btn btn--primary film-card__button" @click="openFilmInfo(film.slug)">
-              Thông tin phim
-            </button>
+            <div class="film-card__overlay">
+              <h3 class="film-card__title">
+                {{ film.name }}
+              </h3>
+
+              <p class="film-card__origin-name">
+                {{ film.origin_name }}
+              </p>
+
+              <div class="film-card__meta">
+                <span class="film-card__year">{{ film.year }}</span>
+                <span v-if="film.tmdb.vote_count > 0" class="film-card__votes"> {{ film.tmdb.vote_count }} votes </span>
+              </div>
+
+              <!-- Action Button (Bấm vào đây sẽ ra trang thông tin film (InforFilm.vue)) -->
+              <button class="btn btn--primary film-card__button" @click="openFilmInfo(film.slug)">
+                Thông tin phim
+              </button>
+            </div>
           </div>
         </article>
       </div>
 
       <!-- Pagination Controls -->
       <div v-if="!isLoading && !isError" class="pagination-controls">
-        <button 
-          @click="prevPage" 
-          :disabled="currentPage === 1"
-          class="btn btn--secondary"
-        >
-          ← Previous
-        </button>
+        <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">← Previous</button>
 
         <span class="pagination-info">
           Page <span class="pagination-number">{{ currentPage }}</span>
         </span>
 
-          <button 
-          @click="nextPage"
-            :disabled="currentPage >= totalPages"
-          class="btn btn--primary"
-        >
-          Next →
+        <button @click="nextPage" :disabled="currentPage >= totalPages" class="btn btn--primary">Next →</button>
+      </div>
+    </section>
+
+    <section v-if="!isKoreaLoading && !isKoreaError && koreaSpotlight.length" class="spotlight-section page__section">
+      <div class="spotlight-head">
+        <div>
+          <h2 class="spotlight-title">Phim hàn quốc mới nhất</h2>
+          <p class="spotlight-subtitle">Tuyển chọn phim mới cập nhật trong ngày.</p>
+        </div>
+
+        <button type="button" class="spotlight-scroll" @click="scrollSpotlightRight" aria-label="Cuộn danh sách sang phải">
+          →
         </button>
+      </div>
+
+      <div
+        ref="spotlightGridRef"
+        class="spotlight-grid"
+        :class="{ 'spotlight-grid--dragging': isSpotlightDragging }"
+        role="list"
+        @pointerdown.prevent="onSpotlightPointerDown"
+        @pointermove="onSpotlightPointerMove"
+        @pointerup="onSpotlightPointerUp"
+        @pointerleave="onSpotlightPointerUp"
+        @pointercancel="onSpotlightPointerCancel"
+        @lostpointercapture="onSpotlightPointerCancel"
+      >
+        <article v-for="(film, index) in koreaSpotlight" :key="film._id" class="spotlight-card" role="listitem">
+          <div class="spotlight-poster" @click="openFilmInfo(film.slug)">
+            <div class="spotlight-poster__inner">
+              <img :src="resolveImageUrl(film.poster_url || film.thumb_url)" :alt="film.name" class="spotlight-image" />
+              <span class="spotlight-rank">{{ index + 1 }}</span>
+
+              <div class="spotlight-tags">
+                <span class="spotlight-tag">PD. {{ film.episode_current || "Full" }}</span>
+                <span v-if="film.tmdb.vote_average" class="spotlight-tag spotlight-tag--accent">
+                  TM. {{ Math.round(film.tmdb.vote_average) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="spotlight-body">
+            <h3 class="spotlight-name">{{ film.name }}</h3>
+            <p class="spotlight-origin">{{ film.origin_name }}</p>
+            <div class="spotlight-meta">
+              <span>{{ film.lang || "Vietsub" }}</span>
+              <span>•</span>
+              <span>{{ film.episode_current || "Full" }}</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section v-if="!isCinemaLoading && !isCinemaError && cinemaSpotlight.length" class="spotlight-section page__section">
+      <div class="spotlight-head">
+        <div>
+          <h2 class="spotlight-title">Phim chiếu rạp</h2>
+          <p class="spotlight-subtitle">Tuyển chọn phim chiếu rạp mới cập nhật.</p>
+        </div>
+
+        <button type="button" class="spotlight-scroll" @click="scrollCinemaRight" aria-label="Cuộn danh sách sang phải">
+          →
+        </button>
+      </div>
+
+      <div
+        ref="cinemaGridRef"
+        class="spotlight-grid"
+        :class="{ 'spotlight-grid--dragging': isCinemaDragging }"
+        role="list"
+        @pointerdown.prevent="onCinemaPointerDown"
+        @pointermove="onCinemaPointerMove"
+        @pointerup="onCinemaPointerUp"
+        @pointerleave="onCinemaPointerUp"
+        @pointercancel="onCinemaPointerCancel"
+        @lostpointercapture="onCinemaPointerCancel"
+      >
+        <article v-for="(film, index) in cinemaSpotlight" :key="film._id" class="spotlight-card" role="listitem">
+          <div class="spotlight-poster" @click="openFilmInfo(film.slug)">
+            <div class="spotlight-poster__inner">
+              <img :src="resolveImageUrl(film.poster_url || film.thumb_url)" :alt="film.name" class="spotlight-image" />
+              <span class="spotlight-rank">{{ index + 1 }}</span>
+
+              <div class="spotlight-tags">
+                <span class="spotlight-tag">PD. {{ film.episode_current || "Full" }}</span>
+                <span v-if="film.tmdb.vote_average" class="spotlight-tag spotlight-tag--accent">
+                  TM. {{ Math.round(film.tmdb.vote_average) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="spotlight-body">
+            <h3 class="spotlight-name">{{ film.name }}</h3>
+            <p class="spotlight-origin">{{ film.origin_name }}</p>
+            <div class="spotlight-meta">
+              <span>{{ film.lang || "Vietsub" }}</span>
+              <span>•</span>
+              <span>{{ film.episode_current || "Full" }}</span>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
   </div>
@@ -350,15 +554,23 @@ const clearGenreFilter = () => {
   border: 0.0625rem solid var(--color-hairline-dark);
   border-radius: var(--radius-xl);
   overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
 }
-
-.product-grid--single {
-  grid-template-columns: minmax(14rem, 18rem);
+@media screen and (max-width: 639.98px) {
+  .film-card{
+    width: 21.5rem;
+  }
+}
+.product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 16.5rem));
   justify-content: start;
+  gap: 0.75rem;
 }
 
 .film-card:hover {
@@ -373,6 +585,22 @@ const clearGenreFilter = () => {
   overflow: hidden;
   background: var(--color-surface-elevated-dark);
   border-bottom: 0.0625rem solid var(--color-hairline-dark);
+}
+
+.film-card__overlay {
+  position: absolute;
+  inset: 0;
+  padding: 0.75rem 0.75rem 0.85rem;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 14, 17, 0.15) 0%,
+    rgba(11, 14, 17, 0.6) 50%,
+    rgba(11, 14, 17, 0.92) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .film-card__image {
@@ -439,17 +667,9 @@ const clearGenreFilter = () => {
   color: #3b82f6;
 }
 
-.film-card__body {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  flex: 1;
-}
-
 .film-card__title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   line-height: 1.4;
   font-weight: 600;
   color: var(--color-on-dark);
@@ -463,7 +683,7 @@ const clearGenreFilter = () => {
 
 .film-card__origin-name {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -476,7 +696,7 @@ const clearGenreFilter = () => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--color-text-muted);
 }
 
@@ -494,7 +714,9 @@ const clearGenreFilter = () => {
 
 .film-card__button {
   width: 100%;
-  margin-top: auto;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
 }
 
 .pagination-controls {
@@ -516,5 +738,170 @@ const clearGenreFilter = () => {
   color: var(--color-primary);
   font-weight: 600;
   font-family: var(--font-number);
+}
+
+.spotlight-section {
+  margin-top: 2rem;
+}
+
+.spotlight-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.spotlight-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.spotlight-subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.spotlight-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(18rem, 18rem);
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+}
+
+.spotlight-grid--dragging {
+  scroll-snap-type: none;
+  cursor: grabbing;
+}
+
+.spotlight-image {
+  -webkit-user-drag: none;
+}
+
+.spotlight-grid::-webkit-scrollbar {
+  height: 0.3rem;
+}
+
+.spotlight-grid::-webkit-scrollbar-thumb {
+  background: rgb(252 213 53 / 0.2);
+  border-radius: 999px;
+}
+
+.spotlight-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  scroll-snap-align: start;
+}
+
+.spotlight-poster {
+  position: relative;
+  border-radius: 1.25rem;
+  aspect-ratio: 2 / 3;
+  cursor: pointer;
+  padding: 0.125rem;
+  background: rgb(252 213 53 / 0.85);
+  clip-path: polygon(0% 10%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.spotlight-poster__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 1.15rem;
+  overflow: hidden;
+  background: var(--color-surface-elevated-dark);
+  clip-path: polygon(0% 10%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.spotlight-card:nth-child(even) .spotlight-poster {
+  clip-path: polygon(0% 0%, 100% 10%, 100% 100%, 0% 100%);
+}
+
+.spotlight-card:nth-child(even) .spotlight-poster__inner {
+  clip-path: polygon(0% 0%, 100% 10%, 100% 100%, 0% 100%);
+}
+
+.spotlight-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.spotlight-poster__inner:hover .spotlight-image {
+  transform: scale(1.06);
+}
+
+.spotlight-rank {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  font-family: var(--font-number);
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  text-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.6);
+}
+
+.spotlight-tags {
+  position: absolute;
+  bottom: 0.65rem;
+  right: 0.5rem;
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.spotlight-tag {
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.45rem;
+  background: rgb(11 14 17 / 0.85);
+  border: 0.0625rem solid var(--color-hairline-dark);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-muted-strong);
+}
+
+.spotlight-tag--accent {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border-color: transparent;
+}
+
+.spotlight-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.spotlight-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-on-dark);
+}
+
+.spotlight-origin {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.spotlight-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--color-text-muted-strong);
 }
 </style>

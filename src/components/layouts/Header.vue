@@ -22,6 +22,7 @@ const countryList = computed(() => countries.value ?? []);
 const currentGenreLabel = computed(() => String(route.query.genreName ?? "Thể loại"));
 const currentYearLabel = computed(() => String(route.query.yearName ?? "Năm"));
 const currentCountryLabel = computed(() => String(route.query.countryName ?? "Quốc gia"));
+const currentListType = computed(() => String(route.query.listType ?? ""));
 const yearList = computed(() => {
   const currentYear = new Date().getFullYear();
   return Array.from({ length: currentYear - 1970 + 1 }, (_, index) => currentYear - index);
@@ -50,6 +51,8 @@ const buildOverviewQuery = (overrides: Partial<Record<string, string>> = {}) => 
     country: String(route.query.country ?? ""),
     countryName: String(route.query.countryName ?? ""),
     keyword: String(route.query.keyword ?? ""),
+    listType: String(route.query.listType ?? ""),
+    listName: String(route.query.listName ?? ""),
   };
 
   return cleanQueryObject({ ...base, ...overrides });
@@ -105,6 +108,17 @@ const selectCountry = (slug: string, name: string) => {
     query: buildOverviewQuery({
       country: slug,
       countryName: name,
+    }),
+  });
+};
+
+const selectListType = (slug: string, name: string) => {
+  mobileMenuOpen.value = false;
+  router.push({
+    path: "/overview",
+    query: buildOverviewQuery({
+      listType: slug,
+      listName: name,
     }),
   });
 };
@@ -186,13 +200,32 @@ watch(
     />
 
     <div class="header__inner">
-      <div class="header__brand" @click="goHome">THẬT MÀ</div>
+      <div class="header__topbar">
+        <div class="header__brand" @click="goHome">THẬT MÀ</div>
 
-      <button type="button" class="header__menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Mở menu">
-        <span class="header__menu-line" />
-        <span class="header__menu-line" />
-        <span class="header__menu-line" />
-      </button>
+        <div class="header__search">
+          <label class="search-field" aria-label="Search products">
+            <span class="search-field__icon">⌕</span>
+            <input
+              v-model="searchKeyword"
+              @keyup.enter="submitSearch"
+              class="search-field__input"
+              type="search"
+              placeholder="Tìm phim..."
+            />
+          </label>
+
+          <button type="button" class="btn btn--primary btn--small" @click="submitSearch">Tìm kiếm</button>
+        </div>
+
+        <router-link to="/login" class="btn btn--secondary btn--small header__member">Thành viên</router-link>
+
+        <button type="button" class="header__menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Mở menu">
+          <span class="header__menu-line" />
+          <span class="header__menu-line" />
+          <span class="header__menu-line" />
+        </button>
+      </div>
 
       <div class="header__menu" :class="{ 'header__menu--open': mobileMenuOpen }">
         <button type="button" class="header__menu-close" @click="mobileMenuOpen = false" aria-label="Đóng menu">
@@ -280,37 +313,67 @@ watch(
             </div>
           </div>
 
+          <div class="top-nav__list">
+            <button
+              type="button"
+              class="top-nav__link top-nav__link--button"
+              :class="{ 'top-nav__link--active': currentListType === 'phim-le' }"
+              @click="selectListType('phim-le', 'Phim lẻ')"
+            >
+              Phim lẻ
+            </button>
+            <button
+              type="button"
+              class="top-nav__link top-nav__link--button"
+              :class="{ 'top-nav__link--active': currentListType === 'phim-bo' }"
+              @click="selectListType('phim-bo', 'Phim bộ')"
+            >
+              Phim bộ
+            </button>
+            <button
+              type="button"
+              class="top-nav__link top-nav__link--button"
+              :class="{ 'top-nav__link--active': currentListType === 'phim-chieu-rap' }"
+              @click="selectListType('phim-chieu-rap', 'Phim chiếu rạp')"
+            >
+              Phim chiếu rạp
+            </button>
+          </div>
+
           <!-- <router-link to="/product" class="top-nav__link">
           Danh mục
         </router-link> -->
-
-          <router-link to="/login" class="top-nav__link"> Đăng nhập </router-link>
         </nav>
-
-        <div class=" flex">
-          <label class="search-field" aria-label="Search products">
-            <span class="search-field__icon">⌕</span>
-            <input
-              v-model="searchKeyword"
-              @keyup.enter="submitSearch"
-              class="search-field__input"
-              type="search"
-              placeholder="Tìm phim..."
-            />
-          </label>
-
-          <button type="button" class="btn btn--primary btn--small" @click="submitSearch">Tìm kiếm</button>
-
-          <!-- <router-link to="/product" class="btn btn--primary btn--small">
-          Khám phá
-        </router-link> -->
-        </div>
       </div>
     </div>
   </header>
 </template>
 
 <style scoped>
+.header__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.header__topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header__search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header__member {
+  white-space: nowrap;
+}
+
 .top-nav__genre {
   position: relative;
 }
@@ -344,7 +407,9 @@ watch(
 }
 
 .header__menu {
-  display: contents;
+  width: 100%;
+  padding-top: 0.5rem;
+  border-top: 0.0625rem solid var(--color-hairline-dark);
 }
 
 .header__menu-close {
@@ -355,6 +420,38 @@ watch(
   border: 0;
   cursor: pointer;
   background: transparent;
+}
+
+.top-nav__list {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.top-nav__link--active {
+  color: var(--color-primary);
+  background: rgb(252 213 53 / 0.1);
+}
+
+.top-nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 0.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.top-nav::-webkit-scrollbar {
+  height: 0.25rem;
+}
+
+.top-nav::-webkit-scrollbar-thumb {
+  background: rgb(252 213 53 / 0.2);
+  border-radius: 999px;
+}
+
+.top-nav__link {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8125rem;
 }
 
 .top-nav__link--button strong {
@@ -440,11 +537,17 @@ watch(
 
 @media (max-width: 56rem) {
   .header__inner {
-    flex-direction: row;
-    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .header__topbar {
+    flex-wrap: wrap;
     justify-content: space-between;
-    flex-wrap: nowrap;
-    gap: 0.75rem;
+  }
+
+  .header__search {
+    order: 3;
+    width: 100%;
   }
 
   .header__menu-toggle {
@@ -510,11 +613,6 @@ watch(
   .top-nav__link--button {
     width: 100%;
     text-align: left;
-  }
-
-  .header__actions {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .search-field {
