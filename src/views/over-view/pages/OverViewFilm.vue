@@ -481,7 +481,7 @@ const clearGenreFilter = () => {
             </div>
           </div>
 
-          <div class="spotlight-body">
+          <div class="spotlight-body" @pointerdown.stop @click="openFilmInfo(film.slug)">
             <h3 class="spotlight-name">{{ film.name }}</h3>
             <p class="spotlight-origin">{{ film.origin_name }}</p>
             <div class="spotlight-meta">
@@ -533,7 +533,7 @@ const clearGenreFilter = () => {
             </div>
           </div>
 
-          <div class="spotlight-body">
+          <div class="spotlight-body" @pointerdown.stop @click="openFilmInfo(film.slug)">
             <h3 class="spotlight-name">{{ film.name }}</h3>
             <p class="spotlight-origin">{{ film.origin_name }}</p>
             <div class="spotlight-meta">
@@ -882,6 +882,7 @@ const clearGenreFilter = () => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  cursor: default;
 }
 
 .spotlight-name {
@@ -889,12 +890,14 @@ const clearGenreFilter = () => {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--color-on-dark);
+  cursor: default;
 }
 
 .spotlight-origin {
   margin: 0;
   font-size: 0.75rem;
   color: var(--color-text-muted);
+  cursor: default;
 }
 
 .spotlight-meta {
@@ -903,5 +906,6 @@ const clearGenreFilter = () => {
   gap: 0.4rem;
   font-size: 0.7rem;
   color: var(--color-text-muted-strong);
+  cursor: default;
 }
 </style>
