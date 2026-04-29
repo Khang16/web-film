@@ -12,6 +12,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/vue-query": "^5.92.9",
     "@tanstack/vue-router": "^1.162.8",
+    "@vercel/analytics": "^2.0.1",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.13.5",
     "class-variance-authority": "^0.7.1",
