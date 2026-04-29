@@ -25,4 +25,6 @@ export interface IOverViewFilm {
   poster_url: string;
   thumb_url: string;
   year: number;
+  episode_current: any
+  lang: string
 }
