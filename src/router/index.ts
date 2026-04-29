@@ -8,6 +8,7 @@ import NotFound from "../views/not-found-page/NotFound.vue";
 import ProductView from "../views/product/components/ProductView.vue";
 import OverViewFilm from "../views/over-view/pages/OverViewFilm.vue";
 import InforFilm from "../views/over-view/pages/InforFilm.vue";
+import Analytics from "../views/analytics/pages/Analytics.vue";
 
 const routes = [
   {
@@ -27,6 +28,10 @@ const routes = [
       {
         path: "overview/:slug",
         component: InforFilm,
+      },
+      {
+        path: "analytics",
+        component: Analytics,
       },
     ],
   },

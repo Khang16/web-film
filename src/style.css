@@ -44,11 +44,15 @@
 }
 
 html {
-  font-size: 100%;
+  font-size: var(--root-font-size);
   scroll-behavior: smooth;
   overflow-x: hidden;
 }
-
+@media screen and (max-width: 639.98px) {
+  :root {
+    --root-font-size: 4.267vw;
+  }
+}
 body {
   margin: 0;
   padding: 0;
