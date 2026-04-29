@@ -19,7 +19,7 @@ const handleLogin = async () => {
     await login(form);
     router.push("/product");
   } catch (error) {
-    alert("Sai tài khoản hoặc mật khẩu");
+    alert(t("auth.loginError"));
   }
 };
 </script>
@@ -27,22 +27,21 @@ const handleLogin = async () => {
 <template>
   <div class="auth-shell">
     <div class="auth-card">
-      <div class="badge badge--brand">Secure access</div>
+      <div class="badge badge--brand">{{ t("auth.secureAccess") }}</div>
 
       <h2 class="auth-card__title">
         {{ t("auth.login") }}
       </h2>
 
       <p class="auth-card__lead">
-        Đăng nhập để tiếp tục trong giao diện tối, một accent vàng và hệ thống
-        màu được gom vào style.css.
+        {{ t("auth.loginLead") }}
       </p>
 
       <form class="auth-form" @submit.prevent="handleLogin">
         <input
           v-model="form.username"
           class="field"
-          placeholder="Username"
+          :placeholder="t('auth.usernamePlaceholder')"
           autocomplete="username"
         />
 
@@ -50,7 +49,7 @@ const handleLogin = async () => {
           v-model="form.password"
           class="field"
           type="password"
-          placeholder="Password"
+          :placeholder="t('auth.passwordPlaceholder')"
           autocomplete="current-password"
         />
 
@@ -60,7 +59,7 @@ const handleLogin = async () => {
           </button>
 
           <router-link to="/product" class="btn btn--ghost">
-            Về danh mục
+            {{ t("auth.backToCatalog") }}
           </router-link>
         </div>
       </form>

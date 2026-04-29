@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useGetInforFilm } from "../services/over-view.query";
 import type { Episode, EpisodeServer } from "../../../common/types/api-response.interface";
+
+const { t } = useI18n();
 
 const IMAGE_CDN_BASE = "https://phimimg.com/";
 
@@ -60,7 +63,7 @@ const getRatingColor = (rating: number) => {
   return "#707a8a";
 };
 
-const formatList = (items?: string[]) => (items?.length ? items.join(", ") : "Đang cập nhật");
+const formatList = (items?: string[]) => (items?.length ? items.join(", ") : t("inforFilm.updating"));
 
 const goBack = () => {
   router.back();
@@ -71,7 +74,9 @@ const goBack = () => {
   <div class="infor-film-page">
     <section class="product-hero" v-if="movie">
       <div class="product-hero__copy">
-        <div class="badge badge--brand">{{ movie.type === "series" ? "Series" : "Movie" }}</div>
+        <div class="badge badge--brand">
+          {{ movie.type === "series" ? t("inforFilm.badge.series") : t("inforFilm.badge.movie") }}
+        </div>
 
         <h1 class="product-hero__title">
           {{ movie.name }}
@@ -83,7 +88,7 @@ const goBack = () => {
 
         <div class="product-hero__actions">
           <button class="btn btn--secondary" @click="goBack">
-            ← Quay lại
+            {{ t("inforFilm.back") }}
           </button>
           <a
             v-if="movie.trailer_url"
@@ -92,7 +97,7 @@ const goBack = () => {
             target="_blank"
             rel="noreferrer"
           >
-            Xem trailer
+            {{ t("inforFilm.watchTrailer") }}
           </a>
         </div>
       </div>
@@ -100,7 +105,7 @@ const goBack = () => {
       <div class="product-hero__panel">
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Đánh giá</p>
+            <p class="product-hero__panel-label">{{ t("inforFilm.rating") }}</p>
             <p class="product-hero__panel-value" :style="{ color: getRatingColor(movie.tmdb.vote_average) }">
               {{ movie.tmdb.vote_average.toFixed(1) }}
             </p>
@@ -110,15 +115,15 @@ const goBack = () => {
 
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Tập hiện tại</p>
+            <p class="product-hero__panel-label">{{ t("inforFilm.currentEpisode") }}</p>
             <p class="product-hero__panel-value">{{ movie.episode_current }}</p>
           </div>
-          <span class="product-hero__panel-chip">{{ movie.episode_total }} tập</span>
+          <span class="product-hero__panel-chip">{{ t("inforFilm.episodeTotal", { total: movie.episode_total }) }}</span>
         </div>
 
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Ngôn ngữ</p>
+            <p class="product-hero__panel-label">{{ t("inforFilm.language") }}</p>
             <p class="product-hero__panel-value">{{ movie.lang }}</p>
           </div>
           <span class="badge badge--muted">{{ movie.quality }}</span>
@@ -127,18 +132,18 @@ const goBack = () => {
     </section>
 
     <section v-if="isLoading" class="state-card">
-      Đang tải thông tin phim...
+      {{ t("inforFilm.loading") }}
     </section>
 
     <section v-else-if="isError" class="state-card state-card--error">
-      {{ error?.message || "Lỗi khi tải thông tin phim" }}
+      {{ error?.message || t("inforFilm.errorLoad") }}
     </section>
 
     <template v-else-if="movie">
       <section class="product-section page__section">
         <div class="product-section__head">
           <div>
-            <h2 class="product-section__title">Thông tin phim</h2>
+            <h2 class="product-section__title">{{ t("inforFilm.sectionTitle") }}</h2>
             <p class="product-section__subtitle">
               {{ movie.content }}
             </p>
@@ -153,21 +158,21 @@ const goBack = () => {
               :alt="movie.name"
             />
             <div class="infor-film-card__meta">
-              <p><strong>Năm:</strong> {{ movie.year }}</p>
-              <p><strong>Thời lượng:</strong> {{ movie.time }}</p>
-              <p><strong>Trạng thái:</strong> {{ movie.status }}</p>
+              <p><strong>{{ t("inforFilm.year") }}:</strong> {{ movie.year }}</p>
+              <p><strong>{{ t("inforFilm.duration") }}:</strong> {{ movie.time }}</p>
+              <p><strong>{{ t("inforFilm.status") }}:</strong> {{ movie.status }}</p>
             </div>
           </article>
 
           <article class="infor-film-card">
-            <h3 class="infor-film-card__title">Mô tả</h3>
+            <h3 class="infor-film-card__title">{{ t("inforFilm.description") }}</h3>
             <p class="infor-film-card__text">{{ movie.content }}</p>
 
             <div class="infor-film-card__info-list">
-              <p><strong>Diễn viên:</strong> {{ formatList(movie.actor) }}</p>
-              <p><strong>Đạo diễn:</strong> {{ formatList(movie.director) }}</p>
-              <p><strong>Thể loại:</strong> {{ movie.category.map((item) => item.name).join(", ") }}</p>
-              <p><strong>Quốc gia:</strong> {{ movie.country.map((item) => item.name).join(", ") }}</p>
+              <p><strong>{{ t("inforFilm.actor") }}:</strong> {{ formatList(movie.actor) }}</p>
+              <p><strong>{{ t("inforFilm.director") }}:</strong> {{ formatList(movie.director) }}</p>
+              <p><strong>{{ t("inforFilm.genre") }}:</strong> {{ movie.category.map((item) => item.name).join(", ") }}</p>
+              <p><strong>{{ t("inforFilm.country") }}:</strong> {{ movie.country.map((item) => item.name).join(", ") }}</p>
             </div>
           </article>
         </div>
@@ -176,9 +181,9 @@ const goBack = () => {
       <section class="product-section page__section" v-if="episodes.length">
         <div class="product-section__head">
           <div>
-            <h2 class="product-section__title">Xem phim</h2>
+            <h2 class="product-section__title">{{ t("inforFilm.watchTitle") }}</h2>
             <p class="product-section__subtitle">
-              Chọn server và tập để phát ngay trong trang.
+              {{ t("inforFilm.watchSubtitle") }}
             </p>
           </div>
         </div>
@@ -193,7 +198,7 @@ const goBack = () => {
               allowfullscreen
             />
             <div v-else class="state-card">
-              Chọn một tập để bắt đầu xem.
+              {{ t("inforFilm.selectEpisode") }}
             </div>
           </div>
 

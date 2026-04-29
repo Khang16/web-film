@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const router = useRouter();
 
@@ -14,20 +17,20 @@ const goHome = () => {
       <div class="badge badge--brand">404</div>
 
       <h1 class="error-card__title">
-        Trang này không tồn tại.
+        {{ t("notFound.title") }}
       </h1>
 
       <p class="error-card__lead">
-        Đường dẫn đã bị xoá, đổi tên hoặc chưa được gắn vào layout hiện tại.
+        {{ t("notFound.lead") }}
       </p>
 
       <div class="error-card__actions">
         <button class="btn btn--primary" @click="goHome">
-          Về danh mục
+          {{ t("notFound.backToCatalog") }}
         </button>
 
         <router-link to="/login" class="btn btn--ghost">
-          Đi tới đăng nhập
+          {{ t("notFound.goToLogin") }}
         </router-link>
       </div>
     </div>

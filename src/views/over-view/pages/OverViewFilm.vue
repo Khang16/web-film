@@ -2,7 +2,10 @@
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useFetchCountrySpotlight, useFetchListSpotlight, useFetchOverViewFilm } from "../services/over-view.query";
+
+const { t } = useI18n();
 
 const IMAGE_CDN_BASE = "https://phimimg.com/";
 
@@ -38,6 +41,13 @@ const countryName = computed(() => String(route.query.countryName ?? ""));
 const keyword = computed(() => String(route.query.keyword ?? ""));
 const listType = computed(() => String(route.query.listType ?? ""));
 const listName = computed(() => String(route.query.listName ?? ""));
+const resolvedListName = computed(() => {
+  if (listName.value) return listName.value;
+  if (listType.value === "phim-le") return t("header.movieSingle");
+  if (listType.value === "phim-bo") return t("header.series");
+  if (listType.value === "phim-chieu-rap") return t("header.cinema");
+  return listType.value;
+});
 
 watch(
   () => [genreSlug.value, yearSlug.value, countrySlug.value, keyword.value, listType.value],
@@ -70,47 +80,53 @@ const hasCountryFilter = computed(() => Boolean(countrySlug.value));
 const hasKeywordFilter = computed(() => Boolean(keyword.value));
 const hasListType = computed(() => Boolean(listType.value));
 const titleLabel = computed(() => {
-  if (hasKeywordFilter.value) return `Từ khóa: ${keyword.value}`;
-  if (hasListType.value) return listName.value || listType.value;
+  if (hasKeywordFilter.value) return t("overview.title.keyword", { keyword: keyword.value });
+  if (hasListType.value) return resolvedListName.value || listType.value;
   if (hasYearFilter.value) return yearName.value || yearSlug.value;
   if (hasCountryFilter.value) return countryName.value || countrySlug.value;
   if (hasGenreFilter.value) return genreName.value || genreSlug.value;
-  return "Phim Mới Cập Nhật";
+  return t("overview.title.latest");
 });
 const leadText = computed(() => {
   if (hasKeywordFilter.value) {
-    return `Kết quả tìm kiếm cho từ khóa \"${keyword.value}\".`;
+    return t("overview.lead.keyword", { keyword: keyword.value });
   }
 
   if (hasListType.value) {
-    return `Danh sách ${listName.value || listType.value} mới cập nhật.`;
+    return t("overview.lead.list", { listName: resolvedListName.value || listType.value });
   }
 
   if (hasYearFilter.value) {
     return hasGenreFilter.value
-      ? `Danh sách phim năm ${yearName.value}, thể loại ${genreName.value}.`
-      : `Danh sách phim năm ${yearName.value}.`;
+      ? t("overview.lead.yearGenre", {
+          year: yearName.value || yearSlug.value,
+          genre: genreName.value || genreSlug.value,
+        })
+      : t("overview.lead.year", { year: yearName.value || yearSlug.value });
   }
 
   if (hasCountryFilter.value) {
     return hasGenreFilter.value
-      ? `Danh sách phim quốc gia ${countryName.value}, thể loại ${genreName.value}.`
-      : `Danh sách phim quốc gia ${countryName.value}.`;
+      ? t("overview.lead.countryGenre", {
+          country: countryName.value || countrySlug.value,
+          genre: genreName.value || genreSlug.value,
+        })
+      : t("overview.lead.country", { country: countryName.value || countrySlug.value });
   }
 
   if (hasGenreFilter.value) {
-    return `Danh sách phim thể loại ${genreName.value}.`;
+    return t("overview.lead.genre", { genre: genreName.value || genreSlug.value });
   }
 
-  return "Danh sách phim mới được cập nhật liên tục với các đánh giá từ TMDB, IMDb, và tính năng xem phim trực tuyến.";
+  return t("overview.lead.latest");
 });
 const activeFilterLabel = computed(() => {
-  if (hasKeywordFilter.value) return "Search";
-  if (hasListType.value) return listName.value || listType.value;
+  if (hasKeywordFilter.value) return t("overview.activeFilter.search");
+  if (hasListType.value) return resolvedListName.value || listType.value;
   if (hasYearFilter.value) return yearName.value || yearSlug.value;
   if (hasCountryFilter.value) return countryName.value || countrySlug.value;
   if (hasGenreFilter.value) return genreName.value || genreSlug.value;
-  return "Live";
+  return t("overview.activeFilter.live");
 });
 const clearYearFilter = () => {
   router.push({
@@ -303,7 +319,7 @@ const clearGenreFilter = () => {
     <!-- Hero Section -->
     <section class="product-hero">
       <div class="product-hero__copy">
-        <div class="badge badge--brand">Film Discovery</div>
+        <div class="badge badge--brand">{{ t("overview.heroBadge") }}</div>
 
         <h1 class="product-hero__title">
           {{ titleLabel }}
@@ -314,15 +330,25 @@ const clearGenreFilter = () => {
         </p>
 
         <div class="product-hero__actions">
-          <button v-if="hasKeywordFilter" @click="clearKeywordFilter" class="btn btn--ghost">Bỏ tìm kiếm</button>
+          <button v-if="hasKeywordFilter" @click="clearKeywordFilter" class="btn btn--ghost">
+            {{ t("overview.clearSearch") }}
+          </button>
 
-          <button v-if="hasYearFilter" @click="clearYearFilter" class="btn btn--ghost">Bỏ lọc năm</button>
+          <button v-if="hasYearFilter" @click="clearYearFilter" class="btn btn--ghost">
+            {{ t("overview.clearYear") }}
+          </button>
 
-          <button v-if="hasCountryFilter" @click="clearCountryFilter" class="btn btn--ghost">Bỏ lọc quốc gia</button>
+          <button v-if="hasCountryFilter" @click="clearCountryFilter" class="btn btn--ghost">
+            {{ t("overview.clearCountry") }}
+          </button>
 
-          <button v-if="hasGenreFilter" @click="clearGenreFilter" class="btn btn--ghost">Tất cả phim</button>
+          <button v-if="hasGenreFilter" @click="clearGenreFilter" class="btn btn--ghost">
+            {{ t("overview.allFilms") }}
+          </button>
 
-          <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">← Trang trước</button>
+          <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">
+            {{ t("overview.prevPage") }}
+          </button>
 
           <span
             style="
@@ -333,17 +359,17 @@ const clearGenreFilter = () => {
               align-items: center;
             "
           >
-            Trang {{ currentPage }} / {{ totalPages }}
+            {{ t("overview.pageStatus", { page: currentPage, total: totalPages }) }}
           </span>
 
-          <button @click="nextPage" class="btn btn--primary">Trang sau →</button>
+          <button @click="nextPage" class="btn btn--primary">{{ t("overview.nextPage") }}</button>
         </div>
       </div>
 
       <div class="product-hero__panel">
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Tổng phim</p>
+            <p class="product-hero__panel-label">{{ t("overview.panel.total") }}</p>
             <p class="product-hero__panel-value">{{ totalItems.toLocaleString("vi-VN") }}</p>
           </div>
           <span class="product-hero__panel-chip">{{ activeFilterLabel }}</span>
@@ -351,18 +377,18 @@ const clearGenreFilter = () => {
 
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Mới nhất</p>
-            <p class="product-hero__panel-value">Hôm nay</p>
+            <p class="product-hero__panel-label">{{ t("overview.panel.latest") }}</p>
+            <p class="product-hero__panel-value">{{ t("overview.panel.today") }}</p>
           </div>
-          <span class="badge badge--brand">Updated</span>
+          <span class="badge badge--brand">{{ t("overview.panel.updated") }}</span>
         </div>
 
         <div class="product-hero__panel-row">
           <div>
-            <p class="product-hero__panel-label">Định dạng</p>
-            <p class="product-hero__panel-value">TV & Film</p>
+            <p class="product-hero__panel-label">{{ t("overview.panel.format") }}</p>
+            <p class="product-hero__panel-value">{{ t("overview.panel.formatValue") }}</p>
           </div>
-          <span class="badge badge--muted">All types</span>
+          <span class="badge badge--muted">{{ t("overview.panel.allTypes") }}</span>
         </div>
       </div>
     </section>
@@ -371,8 +397,8 @@ const clearGenreFilter = () => {
     <section class="product-section page__section">
       <div class="product-section__head">
         <div>
-          <h2 class="product-section__title">Film Collection</h2>
-          <p class="product-section__subtitle">Danh sách phim mới cập nhật với poster, đánh giá, và năm phát hành.</p>
+          <h2 class="product-section__title">{{ t("overview.section.title") }}</h2>
+          <p class="product-section__subtitle">{{ t("overview.section.subtitle") }}</p>
         </div>
       </div>
 
@@ -383,7 +409,7 @@ const clearGenreFilter = () => {
 
       <!-- Error State -->
       <div v-else-if="isError" class="state-card state-card--error">
-        {{ error?.message || "Lỗi khi tải dữ liệu phim" }}
+        {{ error?.message || t("overview.errorLoadFilms") }}
       </div>
 
       <!-- Film Grid -->
@@ -403,7 +429,7 @@ const clearGenreFilter = () => {
 
             <!-- Type Badge -->
             <div class="film-card__type-badge">
-              {{ film.tmdb.type || "Film" }}
+              {{ film.tmdb.type || t("overview.filmTypeDefault") }}
               <span v-if="film.tmdb.season" class="film-card__season"> S{{ film.tmdb.season }} </span>
             </div>
 
@@ -418,12 +444,14 @@ const clearGenreFilter = () => {
 
               <div class="film-card__meta">
                 <span class="film-card__year">{{ film.year }}</span>
-                <span v-if="film.tmdb.vote_count > 0" class="film-card__votes"> {{ film.tmdb.vote_count }} votes </span>
+                <span v-if="film.tmdb.vote_count > 0" class="film-card__votes">
+                  {{ t("overview.votes", { count: film.tmdb.vote_count }) }}
+                </span>
               </div>
 
               <!-- Action Button (Bấm vào đây sẽ ra trang thông tin film (InforFilm.vue)) -->
               <button class="btn btn--primary film-card__button" @click="openFilmInfo(film.slug)">
-                Thông tin phim
+                {{ t("overview.filmInfo") }}
               </button>
             </div>
           </div>
@@ -432,24 +460,33 @@ const clearGenreFilter = () => {
 
       <!-- Pagination Controls -->
       <div v-if="!isLoading && !isError" class="pagination-controls">
-        <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">← Previous</button>
+          <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">
+            {{ t("overview.pagination.prev") }}
+          </button>
 
         <span class="pagination-info">
-          Page <span class="pagination-number">{{ currentPage }}</span>
+            {{ t("overview.pagination.page", { page: currentPage }) }}
         </span>
 
-        <button @click="nextPage" :disabled="currentPage >= totalPages" class="btn btn--primary">Next →</button>
+          <button @click="nextPage" :disabled="currentPage >= totalPages" class="btn btn--primary">
+            {{ t("overview.pagination.next") }}
+          </button>
       </div>
     </section>
 
     <section v-if="!isKoreaLoading && !isKoreaError && koreaSpotlight.length" class="spotlight-section page__section">
       <div class="spotlight-head">
         <div>
-          <h2 class="spotlight-title">Phim hàn quốc mới nhất</h2>
-          <p class="spotlight-subtitle">Tuyển chọn phim mới cập nhật trong ngày.</p>
+          <h2 class="spotlight-title">{{ t("overview.spotlight.koreaTitle") }}</h2>
+          <p class="spotlight-subtitle">{{ t("overview.spotlight.koreaSubtitle") }}</p>
         </div>
 
-        <button type="button" class="spotlight-scroll" @click="scrollSpotlightRight" aria-label="Cuộn danh sách sang phải">
+        <button
+          type="button"
+          class="spotlight-scroll"
+          @click="scrollSpotlightRight"
+          :aria-label="t('overview.spotlight.scrollRight')"
+        >
           →
         </button>
       </div>
@@ -473,9 +510,11 @@ const clearGenreFilter = () => {
               <span class="spotlight-rank">{{ index + 1 }}</span>
 
               <div class="spotlight-tags">
-                <span class="spotlight-tag">PD. {{ film.episode_current || "Full" }}</span>
+                <span class="spotlight-tag">
+                  {{ t("overview.spotlight.episodePrefix") }} {{ film.episode_current || t("overview.spotlight.full") }}
+                </span>
                 <span v-if="film.tmdb.vote_average" class="spotlight-tag spotlight-tag--accent">
-                  TM. {{ Math.round(film.tmdb.vote_average) }}
+                  {{ t("overview.spotlight.ratingPrefix") }} {{ Math.round(film.tmdb.vote_average) }}
                 </span>
               </div>
             </div>
@@ -485,9 +524,9 @@ const clearGenreFilter = () => {
             <h3 class="spotlight-name">{{ film.name }}</h3>
             <p class="spotlight-origin">{{ film.origin_name }}</p>
             <div class="spotlight-meta">
-              <span>{{ film.lang || "Vietsub" }}</span>
+              <span>{{ film.lang || t("overview.spotlight.vietsub") }}</span>
               <span>•</span>
-              <span>{{ film.episode_current || "Full" }}</span>
+              <span>{{ film.episode_current || t("overview.spotlight.full") }}</span>
             </div>
           </div>
         </article>
@@ -497,11 +536,16 @@ const clearGenreFilter = () => {
     <section v-if="!isCinemaLoading && !isCinemaError && cinemaSpotlight.length" class="spotlight-section page__section">
       <div class="spotlight-head">
         <div>
-          <h2 class="spotlight-title">Phim chiếu rạp</h2>
-          <p class="spotlight-subtitle">Tuyển chọn phim chiếu rạp mới cập nhật.</p>
+          <h2 class="spotlight-title">{{ t("overview.spotlight.cinemaTitle") }}</h2>
+          <p class="spotlight-subtitle">{{ t("overview.spotlight.cinemaSubtitle") }}</p>
         </div>
 
-        <button type="button" class="spotlight-scroll" @click="scrollCinemaRight" aria-label="Cuộn danh sách sang phải">
+        <button
+          type="button"
+          class="spotlight-scroll"
+          @click="scrollCinemaRight"
+          :aria-label="t('overview.spotlight.scrollRight')"
+        >
           →
         </button>
       </div>
@@ -525,9 +569,11 @@ const clearGenreFilter = () => {
               <span class="spotlight-rank">{{ index + 1 }}</span>
 
               <div class="spotlight-tags">
-                <span class="spotlight-tag">PD. {{ film.episode_current || "Full" }}</span>
+                <span class="spotlight-tag">
+                  {{ t("overview.spotlight.episodePrefix") }} {{ film.episode_current || t("overview.spotlight.full") }}
+                </span>
                 <span v-if="film.tmdb.vote_average" class="spotlight-tag spotlight-tag--accent">
-                  TM. {{ Math.round(film.tmdb.vote_average) }}
+                  {{ t("overview.spotlight.ratingPrefix") }} {{ Math.round(film.tmdb.vote_average) }}
                 </span>
               </div>
             </div>
@@ -537,9 +583,9 @@ const clearGenreFilter = () => {
             <h3 class="spotlight-name">{{ film.name }}</h3>
             <p class="spotlight-origin">{{ film.origin_name }}</p>
             <div class="spotlight-meta">
-              <span>{{ film.lang || "Vietsub" }}</span>
+              <span>{{ film.lang || t("overview.spotlight.vietsub") }}</span>
               <span>•</span>
-              <span>{{ film.episode_current || "Full" }}</span>
+              <span>{{ film.episode_current || t("overview.spotlight.full") }}</span>
             </div>
           </div>
         </article>

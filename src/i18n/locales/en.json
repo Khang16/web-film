@@ -5,6 +5,182 @@
   },
   "auth": {
     "login": "Login",
-    "logout": "Logout"
+    "logout": "Logout",
+    "loginError": "Incorrect username or password",
+    "secureAccess": "Secure access",
+    "loginLead": "Log in to continue with a dark UI, a single yellow accent, and shared colors defined in style.css.",
+    "usernamePlaceholder": "Username",
+    "passwordPlaceholder": "Password",
+    "backToCatalog": "Back to catalog"
+  },
+  "header": {
+    "home": "Home",
+    "product": "Products",
+    "about": "About",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "searchAriaLabel": "Search films",
+    "searchPlaceholder": "Search films...",
+    "searchButton": "Search",
+    "searchLoading": "Searching...",
+    "searchEmpty": "No matching films",
+    "toggleLanguage": "Toggle language",
+    "navFilms": "Films",
+    "genre": "Genre",
+    "year": "Year",
+    "country": "Country",
+    "chooseGenre": "Choose genre",
+    "chooseYear": "Choose year",
+    "chooseCountry": "Choose country",
+    "allFilms": "All films",
+    "movieSingle": "Single",
+    "series": "Series",
+    "cinema": "In theaters",
+    "primaryNavAria": "Primary navigation"
+  },
+  "sidebar": {
+    "brandTitle": "VueFilm",
+    "brandSubtitle": "Dark canvas · yellow accent · rem only",
+    "liveShell": "Live shell",
+    "productFeed": "Product feed",
+    "active": "Active",
+    "productFeedMeta": "Curated catalog on a flat dark surface.",
+    "signals": "Signals",
+    "watch": "Watch",
+    "signalsMeta": "Yellow CTAs, trading green/red, dense information blocks.",
+    "settings": "Settings",
+    "sync": "Sync",
+    "settingsMeta": "Typography, layout rhythm, and color tokens live in one file.",
+    "note": "Shared colors live in <strong>style.css</strong>."
+  },
+  "notFound": {
+    "title": "This page does not exist.",
+    "lead": "The route was removed, renamed, or not wired to the current layout.",
+    "backToCatalog": "Back to catalog",
+    "goToLogin": "Go to login"
+  },
+  "overview": {
+    "title": {
+      "keyword": "Keyword: {keyword}",
+      "latest": "Latest films"
+    },
+    "lead": {
+      "keyword": "Search results for \"{keyword}\".",
+      "list": "Updated list of {listName} films.",
+      "yearGenre": "Films from {year}, genre {genre}.",
+      "year": "Films from {year}.",
+      "countryGenre": "Films from {country}, genre {genre}.",
+      "country": "Films from {country}.",
+      "genre": "Films in {genre}.",
+      "latest": "Continuously updated films with TMDB, IMDb ratings, and in-page streaming."
+    },
+    "activeFilter": {
+      "search": "Search",
+      "live": "Live"
+    },
+    "heroBadge": "Film discovery",
+    "clearSearch": "Clear search",
+    "clearYear": "Clear year",
+    "clearCountry": "Clear country",
+    "allFilms": "All films",
+    "prevPage": "← Previous",
+    "nextPage": "Next →",
+    "pageStatus": "Page {page} / {total}",
+    "panel": {
+      "total": "Total films",
+      "latest": "Latest",
+      "today": "Today",
+      "updated": "Updated",
+      "format": "Format",
+      "formatValue": "TV & Film",
+      "allTypes": "All types"
+    },
+    "section": {
+      "title": "Film collection",
+      "subtitle": "Updated films with posters, ratings, and release years."
+    },
+    "errorLoadFilms": "Failed to load films",
+    "filmTypeDefault": "Film",
+    "votes": "{count} votes",
+    "filmInfo": "Film info",
+    "pagination": {
+      "prev": "← Previous",
+      "page": "Page {page}",
+      "next": "Next →"
+    },
+    "spotlight": {
+      "koreaTitle": "Latest Korean films",
+      "koreaSubtitle": "Freshly updated selections today.",
+      "cinemaTitle": "In theaters",
+      "cinemaSubtitle": "Updated theatrical releases.",
+      "scrollRight": "Scroll list to the right",
+      "episodePrefix": "EP.",
+      "ratingPrefix": "TM.",
+      "full": "Full",
+      "vietsub": "Vietsub"
+    }
+  },
+  "inforFilm": {
+    "badge": {
+      "series": "Series",
+      "movie": "Movie"
+    },
+    "back": "← Back",
+    "watchTrailer": "Watch trailer",
+    "rating": "Rating",
+    "currentEpisode": "Current episode",
+    "episodeTotal": "{total} episodes",
+    "language": "Language",
+    "loading": "Loading film details...",
+    "errorLoad": "Failed to load film details",
+    "sectionTitle": "Film details",
+    "year": "Year",
+    "duration": "Duration",
+    "status": "Status",
+    "description": "Description",
+    "actor": "Cast",
+    "director": "Director",
+    "genre": "Genre",
+    "country": "Country",
+    "watchTitle": "Watch",
+    "watchSubtitle": "Pick a server and episode to play inline.",
+    "selectEpisode": "Select an episode to start watching.",
+    "updating": "Updating"
+  },
+  "product": {
+    "hero": {
+      "badge": "Market overview",
+      "title": "A darker, tighter surface with more signals.",
+      "lead": "The product catalog is rendered in a trading-inspired style: dark canvas, a single yellow accent, flat blocks, and rem-based rhythm.",
+      "login": "Login",
+      "refresh": "Refresh catalog",
+      "stats": {
+        "productsShown": "Products shown",
+        "accentValue": "Yellow",
+        "accentLabel": "Single CTA accent",
+        "scaleValue": "rem",
+        "scaleLabel": "All sizes use rem"
+      },
+      "panel": {
+        "canvas": "Canvas",
+        "canvasValue": "Deep near-black",
+        "stable": "Stable",
+        "primary": "Primary",
+        "primaryValue": "#FCD535",
+        "primaryBadge": "Yellow",
+        "layout": "Layout",
+        "layoutValue": "Flat cards + hairlines",
+        "layoutBadge": "Binance-like"
+      }
+    },
+    "section": {
+      "title": "Product list",
+      "subtitle": "Products sit on dark cards with price and yellow CTAs."
+    },
+    "card": {
+      "liveItem": "Live item",
+      "updated": "Updated",
+      "viewDetail": "View detail"
+    }
   }
 }
