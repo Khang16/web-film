@@ -18,6 +18,7 @@
 </template>
 
 <script setup lang="ts">
+import SplashCursor from './components/splashCursor.vue';
+
 // import TextCursor from './components/TextCursor.vue';
-import SplashCursor from "./components/splashCursor.vue";
 </script>
