@@ -106,7 +106,9 @@
     "pagination": {
       "prev": "← Previous",
       "page": "Page {page}",
-      "next": "Next →"
+      "next": "Next →",
+      "placeholder": "Jump to page",
+      "go": "Go"
     },
     "spotlight": {
       "koreaTitle": "Latest Korean films",

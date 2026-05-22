@@ -312,6 +312,51 @@ const clearGenreFilter = () => {
     },
   });
 };
+
+// Pagination helpers: show first 3 pages, last 3 pages, and jump-to-page
+const jumpPage = ref("");
+
+const startPages = computed(() => {
+  const tp = totalPages.value;
+  const count = Math.min(3, tp);
+  return Array.from({ length: count }, (_, i) => i + 1);
+});
+
+const endPages = computed(() => {
+  const tp = totalPages.value;
+  if (tp <= 6) return [];
+  const start = Math.max(4, tp - 2);
+  const pages: number[] = [];
+  for (let p = start; p <= tp; p++) pages.push(p);
+  return pages;
+});
+
+const showEllipsis = computed(() => {
+  const ep = endPages.value;
+  const sp = startPages.value;
+  if (!ep || !ep.length) return false;
+  if (!sp || !sp.length) return false;
+  const lastStart = sp[sp.length - 1];
+  const firstEnd = ep[0];
+  if (lastStart == null || firstEnd == null) return false;
+  return lastStart < firstEnd - 1;
+});
+
+const setPage = (p: number) => {
+  if (p < 1) p = 1;
+  if (p > totalPages.value) p = totalPages.value;
+  currentPage.value = p;
+};
+
+const goToPage = () => {
+  const n = Number(jumpPage.value);
+  if (!Number.isFinite(n) || !Number.isInteger(n)) {
+    jumpPage.value = "";
+    return;
+  }
+  setPage(n);
+  jumpPage.value = "";
+};
 </script>
 
 <template>
@@ -460,17 +505,48 @@ const clearGenreFilter = () => {
 
       <!-- Pagination Controls -->
       <div v-if="!isLoading && !isError" class="pagination-controls">
-          <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">
-            {{ t("overview.pagination.prev") }}
+        <button @click="prevPage" :disabled="currentPage === 1" class="btn btn--secondary">
+          {{ t("overview.pagination.prev") }}
+        </button>
+
+        <div class="page-list" aria-hidden="false">
+          <button
+            v-for="p in startPages"
+            :key="'start-' + p"
+            :class="['page-btn', { 'page-btn--active': p === currentPage }]"
+            @click="setPage(p)"
+          >
+            {{ p }}
           </button>
 
-        <span class="pagination-info">
-            {{ t("overview.pagination.page", { page: currentPage }) }}
-        </span>
+          <span v-if="showEllipsis" class="ellipsis">…</span>
 
-          <button @click="nextPage" :disabled="currentPage >= totalPages" class="btn btn--primary">
-            {{ t("overview.pagination.next") }}
+          <button
+            v-for="p in endPages"
+            :key="'end-' + p"
+            :class="['page-btn', { 'page-btn--active': p === currentPage }]"
+            @click="setPage(p)"
+          >
+            {{ p }}
           </button>
+        </div>
+
+        <div class="jump-to">
+          <input
+            type="number"
+            v-model="jumpPage"
+            class="jump-input"
+            :min="1"
+            :max="totalPages"
+            :placeholder="t('overview.pagination.placeholder')"
+            @keyup.enter="goToPage"
+          />
+          <button class="btn btn--ghost" @click="goToPage">{{ t('overview.pagination.go') }}</button>
+        </div>
+
+        <button @click="nextPage" :disabled="currentPage >= totalPages" class="btn btn--primary">
+          {{ t("overview.pagination.next") }}
+        </button>
       </div>
     </section>
 
@@ -610,13 +686,58 @@ const clearGenreFilter = () => {
 }
 @media screen and (max-width: 639.98px) {
   .film-card{
-    width: 21.5rem;
+    width: auto;
   }
 }
 .product-grid {
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(12.5rem, 16.5rem));
   justify-content: start;
   gap: 0.75rem;
+}
+
+@media screen and (max-width: 639.98px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .film-card__title {
+    font-size: 0.9rem;
+  }
+
+  .film-card__overlay {
+    padding: 0.5rem;
+  }
+
+  .pagination-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 1rem 0.75rem;
+  }
+
+  .page-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .page-btn {
+    min-width: 1.9rem;
+    padding: 0.25rem 0.45rem;
+    font-size: 0.85rem;
+  }
+
+  .jump-to {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .jump-input {
+    width: 6.5rem;
+  }
 }
 
 .film-card:hover {
@@ -953,5 +1074,50 @@ const clearGenreFilter = () => {
   font-size: 0.7rem;
   color: var(--color-text-muted-strong);
   cursor: default;
+}
+
+/* Pagination UI styles */
+.page-list {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0.75rem;
+}
+
+.page-btn {
+  min-width: 2.25rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: 0.0625rem solid transparent;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.page-btn--active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: transparent;
+}
+
+.ellipsis {
+  color: var(--color-text-muted);
+  padding: 0 0.25rem;
+}
+
+.jump-to {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0.75rem;
+}
+
+.jump-input {
+  width: 4.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 0.0625rem solid var(--color-hairline-dark);
+  background: var(--color-surface-dark);
+  color: var(--color-on-dark);
 }
 </style>
