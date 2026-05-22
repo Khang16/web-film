@@ -52,6 +52,39 @@ html {
   :root {
     --root-font-size: 4.267vw;
   }
+  html {
+    font-size: var(--root-font-size);
+  
+  }
+}
+
+/* Tablet and small laptop screens: keep text readable in both orientations */
+@media screen and (min-width: 640px) and (max-width: 1024px) {
+  :root {
+    --root-font-size: 3.267vw;
+  }
+  html {
+    font-size: var(--root-font-size) !important;
+  }
+}
+
+/* Mobile landscape: use viewport height to size root font when device is rotated */
+@media screen and (max-width: 800px) and (orientation: landscape) {
+  :root {
+    --root-font-size: 6.267vh !important;
+  }
+  html {
+    font-size: var(--root-font-size) !important;
+  }
+}
+
+@media screen and (max-width: 1200px) and (orientation: landscape) {
+  :root {
+    --root-font-size: 3.267vh !important;
+  }
+  html {
+    font-size: var(--root-font-size) !important;
+  }
 }
 body {
   margin: 0;

@@ -106,7 +106,9 @@
     "pagination": {
       "prev": "← Trước",
       "page": "Trang {page}",
-      "next": "Sau →"
+      "next": "Sau →",
+      "placeholder": "Nhập số trang",
+      "go": "Tới"
     },
     "spotlight": {
       "koreaTitle": "Phim Hàn Quốc mới nhất",
