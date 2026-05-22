@@ -740,6 +740,13 @@ const goToPage = () => {
   }
 }
 
+@media screen and (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+}
+
 .film-card:hover {
   transform: translateY(-0.1875rem);
   border-color: rgb(252 213 53 / 0.4);

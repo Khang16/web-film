@@ -610,6 +610,14 @@ img {
   gap: 1rem;
 }
 
+/* Force 2 columns on tablet and smaller devices */
+@media screen and (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
 .product-card {
   overflow: hidden;
   transition:
