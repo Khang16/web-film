@@ -24,10 +24,30 @@ const normalizePagination = (pagination?: Partial<PaginationMeta>): PaginationMe
   totalPages: pagination?.totalPages ?? 1,
 });
 
+const filter18PlusItems = (items: IOverViewFilm[] = []): IOverViewFilm[] => {
+  return items.filter((item: any) => {
+    // Filter by category if available (from v1/api)
+    if (item.category && Array.isArray(item.category)) {
+      if (item.category.some((c: any) => c.slug === "phim-18" || c.slug === "18-plus" || c.slug === "18")) {
+        return false;
+      }
+    }
+    
+    // Filter by name or origin_name as a fallback
+    const nameStr = (item.name || "").toLowerCase();
+    const originStr = (item.origin_name || "").toLowerCase();
+    if (nameStr.includes("18+") || originStr.includes("18+")) {
+      return false;
+    }
+    return true;
+  });
+};
+
 export const overViewApi = {
   async getGenres(): Promise<IGenre[]> {
     const response = await axiosClient.get<IGenre[]>("the-loai") as unknown as IGenre[];
-    return Array.isArray(response) ? response : [];
+    const genres = Array.isArray(response) ? response : [];
+    return genres.filter((g) => g.slug !== "phim-18" && g.slug !== "18-plus");
   },
 
   async getCountries(): Promise<ICountry[]> {
@@ -45,7 +65,7 @@ export const overViewApi = {
     };
 
     return {
-      items: response.items ?? [],
+      items: filter18PlusItems(response.items ?? []),
       pagination: normalizePagination(response.pagination ?? emptyPagination),
     };
   },
@@ -59,9 +79,25 @@ export const overViewApi = {
       episodes?: any[];
     };
 
+    const movie = response.movie ?? null;
+    let is18Plus = false;
+    
+    if (movie) {
+      if (movie.category && Array.isArray(movie.category)) {
+        is18Plus = movie.category.some(c => c.slug === "phim-18" || c.slug === "18-plus" || c.slug === "18");
+      }
+      if (!is18Plus) {
+        const nameStr = (movie.name || "").toLowerCase();
+        const originStr = (movie.origin_name || "").toLowerCase();
+        if (nameStr.includes("18+") || originStr.includes("18+")) {
+          is18Plus = true;
+        }
+      }
+    }
+
     return {
-      movie: response.movie ?? null,
-      episodes: response.episodes ?? [],
+      movie: is18Plus ? null : movie,
+      episodes: is18Plus ? [] : (response.episodes ?? []),
     };
   },
 
@@ -85,7 +121,7 @@ export const overViewApi = {
     };
 
     return {
-      items: response.data?.items ?? [],
+      items: filter18PlusItems(response.data?.items ?? []),
       pagination: normalizePagination(response.data?.params?.pagination),
     };
   },
@@ -129,7 +165,7 @@ export const overViewApi = {
     };
 
     return {
-      items: response.data?.items ?? [],
+      items: filter18PlusItems(response.data?.items ?? []),
       pagination: normalizePagination(response.data?.params?.pagination),
     };
   },
@@ -173,7 +209,7 @@ export const overViewApi = {
     };
 
     return {
-      items: response.data?.items ?? [],
+      items: filter18PlusItems(response.data?.items ?? []),
       pagination: normalizePagination(response.data?.params?.pagination),
     };
   },
@@ -223,7 +259,7 @@ export const overViewApi = {
     };
 
     return {
-      items: response.data?.items ?? [],
+      items: filter18PlusItems(response.data?.items ?? []),
       pagination: normalizePagination(response.data?.params?.pagination),
     };
   },
@@ -272,7 +308,7 @@ export const overViewApi = {
     };
 
     return {
-      items: response.data?.items ?? [],
+      items: filter18PlusItems(response.data?.items ?? []),
       pagination: normalizePagination(response.data?.params?.pagination),
     };
   },
