@@ -316,30 +316,36 @@ const clearGenreFilter = () => {
 // Pagination helpers: show first 3 pages, last 3 pages, and jump-to-page
 const jumpPage = ref("");
 
-const startPages = computed(() => {
-  const tp = totalPages.value;
-  const count = Math.min(3, tp);
-  return Array.from({ length: count }, (_, i) => i + 1);
-});
+const visiblePages = computed(() => {
+  const current = currentPage.value;
+  const total = totalPages.value;
+  const delta = 1;
 
-const endPages = computed(() => {
-  const tp = totalPages.value;
-  if (tp <= 6) return [];
-  const start = Math.max(4, tp - 2);
-  const pages: number[] = [];
-  for (let p = start; p <= tp; p++) pages.push(p);
-  return pages;
-});
+  let left = current - delta;
+  let right = current + delta;
+  const range: number[] = [];
+  const rangeWithDots: (number | string)[] = [];
+  let l: number | undefined;
 
-const showEllipsis = computed(() => {
-  const ep = endPages.value;
-  const sp = startPages.value;
-  if (!ep || !ep.length) return false;
-  if (!sp || !sp.length) return false;
-  const lastStart = sp[sp.length - 1];
-  const firstEnd = ep[0];
-  if (lastStart == null || firstEnd == null) return false;
-  return lastStart < firstEnd - 1;
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= left && i <= right)) {
+      range.push(i);
+    }
+  }
+
+  for (const i of range) {
+    if (l) {
+      if (i - l === 2) {
+        rangeWithDots.push(l + 1);
+      } else if (i - l !== 1) {
+        rangeWithDots.push("...");
+      }
+    }
+    rangeWithDots.push(i);
+    l = i;
+  }
+
+  return rangeWithDots;
 });
 
 const setPage = (p: number) => {
@@ -510,25 +516,16 @@ const goToPage = () => {
         </button>
 
         <div class="page-list" aria-hidden="false">
-          <button
-            v-for="p in startPages"
-            :key="'start-' + p"
-            :class="['page-btn', { 'page-btn--active': p === currentPage }]"
-            @click="setPage(p)"
-          >
-            {{ p }}
-          </button>
-
-          <span v-if="showEllipsis" class="ellipsis">…</span>
-
-          <button
-            v-for="p in endPages"
-            :key="'end-' + p"
-            :class="['page-btn', { 'page-btn--active': p === currentPage }]"
-            @click="setPage(p)"
-          >
-            {{ p }}
-          </button>
+          <template v-for="(p, index) in visiblePages" :key="'page-' + index">
+            <span v-if="p === '...'" class="ellipsis">…</span>
+            <button
+              v-else
+              :class="['page-btn', { 'page-btn--active': p === currentPage }]"
+              @click="setPage(Number(p))"
+            >
+              {{ p }}
+            </button>
+          </template>
         </div>
 
         <div class="jump-to">
