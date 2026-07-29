@@ -24,6 +24,35 @@ const normalizePagination = (pagination?: Partial<PaginationMeta>): PaginationMe
   totalPages: pagination?.totalPages ?? 1,
 });
 
+const extractItems = <T>(payload: unknown): T[] => {
+  if (Array.isArray(payload)) {
+    return payload as T[];
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const directItems = (payload as { items?: unknown }).items;
+  if (Array.isArray(directItems)) {
+    return directItems as T[];
+  }
+
+  const nestedData = (payload as { data?: unknown }).data;
+  if (Array.isArray(nestedData)) {
+    return nestedData as T[];
+  }
+
+  if (nestedData && typeof nestedData === "object") {
+    const nestedItems = (nestedData as { items?: unknown }).items;
+    if (Array.isArray(nestedItems)) {
+      return nestedItems as T[];
+    }
+  }
+
+  return [];
+};
+
 const filter18PlusItems = (items: IOverViewFilm[] = []): IOverViewFilm[] => {
   return items.filter((item: any) => {
     // Filter by category if available (from v1/api)
@@ -45,14 +74,14 @@ const filter18PlusItems = (items: IOverViewFilm[] = []): IOverViewFilm[] => {
 
 export const overViewApi = {
   async getGenres(): Promise<IGenre[]> {
-    const response = await axiosClient.get<IGenre[]>("the-loai") as unknown as IGenre[];
-    const genres = Array.isArray(response) ? response : [];
+    const response = await axiosClient.get<unknown>("the-loai");
+    const genres = extractItems<IGenre>(response);
     return genres.filter((g) => g.slug !== "phim-18" && g.slug !== "18-plus");
   },
 
   async getCountries(): Promise<ICountry[]> {
-    const response = await axiosClient.get<ICountry[]>("quoc-gia") as unknown as ICountry[];
-    return Array.isArray(response) ? response : [];
+    const response = await axiosClient.get<unknown>("quoc-gia");
+    return extractItems<ICountry>(response);
   },
 
   async getAll(page: number): Promise<IFilmPageResult> {
